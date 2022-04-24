@@ -28,15 +28,14 @@ def randInteger(min,max):
 #Applies effects from the list to the currently selected building
 def addBuildingEffects(effect,buildingName):
     print("Applying",effect,"to",buildingName)
+
+    if effect=="addWindows":#Adds windows (This is first so the geometry doesnt look like the result of a natural disaster)
+        cmds.polyExtrudeFacet(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]',kft=False, ltz=-.75, ls=(.5, .8, 0),smoothingAngle=45)
+
     if effect=="scaleTop":#Scale top in
         cmds.select(buildingName+'.e[30:34]')
         cmds.select(buildingName+'.e[25:29]',add=True)
-        cmds.scale(randFloat(0.5,1.5),randFloat(0.5,1.5),1)
-
-    elif effect=="addWindows":#Adds windows
-        #     cmds.select(buildingName+'.e['+str(face)+']',add=True)#Selects the faces from the midpoint list
-        #cmds.polyExtrudeFacet(localScale=(.5, .5, 0),translateX=1)
-        cmds.polyExtrudeFacet(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]',kft=False, ltz=-.75, ls=(.5, .8, 0),smoothingAngle=45)
+        cmds.scale(randFloat(1,1.5),randFloat(1,1.5),1)
 
     elif effect=="bevel":#Bevels edges
         edgeRingVal=randInteger(0,130)
@@ -184,7 +183,6 @@ class BG_Window(object):
         
         #gets effects
         if cmds.checkBox(self.inpEffectAddWindows, query=True, value=True):#Queries if check box is checked
-            
             effects.append(["addWindows",cmds.intSliderGrp(self.inpEffectAddWindowsChance, query=True, value=True)])#Adds the effect and its % chance of being applied to an array
         if cmds.checkBox(self.inpEffectBevel, query=True, value=True):#Queries if check box is checked
             effects.append(["bevel",cmds.intSliderGrp(self.inpEffectBevelChance, query=True, value=True)])#Adds the effect to the list of effects to use
