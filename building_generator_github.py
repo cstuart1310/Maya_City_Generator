@@ -113,21 +113,19 @@ class BG_Window(object):
         self.inpBuildingDepth = cmds.floatFieldGrp( numberOfFields=2, label='Building Depth range:', value1=10, value2=20)
         self.inpNoBuildings = cmds.intSliderGrp(field=True, label='Number of buildings:', minValue=1,maxValue=100000, value=1000)
 
-        #Effect Tickboxes
+        #Effect Tickboxes and sliders
         cmds.rowColumnLayout(nc=2)#Changes the layout so can have 2 items next to each other
-        self.inpEffectAddWindows=cmds.checkBox(label='Add Windows')
-        self.inpEffectAddWindowsChance = cmds.intSliderGrp(field=True, label='% Chance of this being applied to a building:', minValue=1,maxValue=100, value=50)
+        self.inpEffectAddWindows=cmds.checkBox(label='Add Windows',changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddWindowsChance))#Checkbox for toggling the effect. Lambda is used to define the changecommand without actually running it, so a variable can be passed and the one function can manage all slider toggles
+        self.inpEffectAddWindowsChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
 
-        self.inpEffectBevel=cmds.checkBox(label='Bevel Top edges')
-        self.inpEffectBevelChance = cmds.intSliderGrp(field=True, label='% Chance of this effect being applied to a building:', minValue=1,maxValue=100, value=50)
+        self.inpEffectBevel=cmds.checkBox(label='Bevel Top edges',changeCommand=lambda x: self.toggleSliderLock(self.inpEffectBevelChance))
+        self.inpEffectBevelChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
-        self.inpEffectScaleTop=cmds.checkBox(label='Scale In Top edges')#, onCommand=self.toggleSliderLock(self.inpEffectScaleTopChance,"on"),offCommand=self.toggleSliderLock(self.inpEffectScaleTopChance,"off"))
-        self.inpEffectScaleTopChance = cmds.intSliderGrp(field=True, label='% Chance of this effect being applied to a building:', minValue=1,maxValue=100, value=50,enable=False)
+        self.inpEffectScaleTop=cmds.checkBox(label='Scale In Top edges', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectScaleTopChance))
+        self.inpEffectScaleTopChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
-        cmds.separator()
-
+        cmds.separator(style='none')#Resets the layout to one after the other
         cmds.columnLayout(adjustableColumn = True)
-        cmds.separator()
 
         #Gen button
         self.buildBtn = cmds.button( label='Create Buildings', command=self.genBuildings,width=500)
@@ -135,12 +133,16 @@ class BG_Window(object):
 
         cmds.showWindow()
 
-    def toggleSliderLock(self, slider,state):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
-        if state=="on":
-            cmds.intSliderGrp(slider,enable=True)
-        elif state=="off":
-            cmds.intSliderGrp(slider,enable=True)
-
+    def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
+        print(slider)
+        try:#Used so doesn't crash when running before the sliders exist            
+            if  cmds.intSliderGrp(slider,query=True,enable=True):
+                cmds.intSliderGrp(slider,edit=True,enable=False)
+            else:
+                cmds.intSliderGrp(slider,edit=True,enable=True)
+        except AttributeError as e:
+            print(e)
+        return None
 
     def removeBuildings(self, *args):#Removes the last generated city
         try:
