@@ -29,10 +29,10 @@ def randInteger(min,max):
 def addBuildingEffects(effect,buildingName):
     print("Applying",effect,"to",buildingName)
 
-    if effect=="addWindows":#Adds windows (This is first so the geometry doesnt look like the result of a natural disaster)
+    if effect=="addWindows":#Adds windows
         cmds.polyExtrudeFacet(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]',kft=False, ltz=-.75, ls=(.5, .8, 0),smoothingAngle=45)
 
-    if effect=="scaleTop":#Scale top in
+    elif effect=="scaleTop":#Scale top in
         cmds.select(buildingName+'.e[30:34]')
         cmds.select(buildingName+'.e[25:29]',add=True)
         cmds.scale(randFloat(1,1.5),randFloat(1,1.5),1)
@@ -42,6 +42,10 @@ def addBuildingEffects(effect,buildingName):
         print("Edge ring being beveled:",edgeRingVal)
         cmds.polySelect(buildingName, edgeRing=edgeRingVal)
         cmds.polyBevel(segments=randInteger(1,12),offset=randFloat(0.1,0.9),offsetAsFraction=True) #Applies bevel (offset=fraction value in maya ui)
+
+    elif effect=="rotate":
+        rotateVal=(0,randFloat(5,359),0)
+        cmds.xform(buildingName,rotation=rotateVal,worldSpace=True,centerPivots=True,absolute=True)#Rotates the building
 
 
 #main-------------------------------------------------
@@ -123,8 +127,12 @@ class BG_Window(object):
         self.inpEffectBevel=cmds.checkBox(label='Bevel Top edges',changeCommand=lambda x: self.toggleSliderLock(self.inpEffectBevelChance))
         self.inpEffectBevelChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
-        self.inpEffectScaleTop=cmds.checkBox(label='Scale In Top edges', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectScaleTopChance))
+        self.inpEffectScaleTop=cmds.checkBox(label='Scale Top Edges', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectScaleTopChance))
         self.inpEffectScaleTopChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
+
+        self.inpEffectRotate=cmds.checkBox(label='Rotate building', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectRotateChance))
+        self.inpEffectRotateChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
+
 
         cmds.separator(style='none')#Resets the layout to one after the other
         cmds.columnLayout(adjustableColumn = True)
@@ -181,14 +189,15 @@ class BG_Window(object):
 
         effects=[]#Clears effects on each re-run
         
-        #gets effects
+        #gets effects (In the order that works best to apply in)
+        if cmds.checkBox(self.inpEffectScaleTop, query=True, value=True):#Queries if check box is checked
+            effects.append(["scaleTop",cmds.intSliderGrp(self.inpEffectScaleTopChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectAddWindows, query=True, value=True):#Queries if check box is checked
             effects.append(["addWindows",cmds.intSliderGrp(self.inpEffectAddWindowsChance, query=True, value=True)])#Adds the effect and its % chance of being applied to an array
         if cmds.checkBox(self.inpEffectBevel, query=True, value=True):#Queries if check box is checked
             effects.append(["bevel",cmds.intSliderGrp(self.inpEffectBevelChance, query=True, value=True)])#Adds the effect to the list of effects to use
-        if cmds.checkBox(self.inpEffectScaleTop, query=True, value=True):#Queries if check box is checked
-            effects.append(["scaleTop",cmds.intSliderGrp(self.inpEffectScaleTopChance, query=True, value=True)])#Adds the effect to the list of effects to use
-
+        if cmds.checkBox(self.inpEffectRotate, query=True, value=True):#Queries if check box is checked
+            effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
 
         #main loop
         if cmds.objExists('Buildings'):
