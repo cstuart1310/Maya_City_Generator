@@ -14,6 +14,9 @@ pastPositions=[]
 
 midFacesX=[53,51,63,61,71,73,23,21,11,13,3,1]
 
+
+
+
 #functions----------------------------------------
 
 #Gets a random value between ranges (Shorter than using full length command each time which makes better readability)
@@ -31,9 +34,9 @@ def addBuildingEffects(effect,buildingName):
         cmds.scale(randFloat(0.5,1.5),randFloat(0.5,1.5),1)
 
     elif effect=="addWindows":#Adds windows
-        for face in midFacesX:
-            cmds.select(buildingName+'.e['+str(face)+']',add=True)#Selects the faces from the midpoint list
-        cmds.polyExtrudeFacet(localScaleX=.9)
+        #     cmds.select(buildingName+'.e['+str(face)+']',add=True)#Selects the faces from the midpoint list
+        #cmds.polyExtrudeFacet(localScale=(.5, .5, 0),translateX=1)
+        cmds.polyExtrudeFacet(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]',kft=False, ltz=-.75, ls=(.5, .8, 0),smoothingAngle=45)
 
     elif effect=="bevel":#Bevels edges
         edgeRingVal=randInteger(0,130)
