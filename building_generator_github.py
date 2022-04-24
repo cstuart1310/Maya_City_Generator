@@ -33,7 +33,7 @@ def addBuildingEffects(effect,buildingName):
     elif effect=="addWindows":#Adds windows
         for face in midFacesX:
             cmds.select(buildingName+'.e['+str(face)+']',add=True)#Selects the faces from the midpoint list
-        cmds.polyExtrudeFacet(localScaleX=1)
+        cmds.polyExtrudeFacet(localScaleX=.9)
 
     elif effect=="bevel":#Bevels edges
         edgeRingVal=randInteger(0,130)
