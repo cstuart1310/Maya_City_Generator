@@ -140,7 +140,9 @@ class BG_Window(object):
 
         #Gen button
         self.buildBtn = cmds.button( label='Create Buildings', command=self.genBuildings,width=500)
-        self.buildBtn = cmds.button( label='Undo Last City', command=self.removeBuildings,width=500)
+        self.undoBtn = cmds.button( label='Undo Last City', command=self.removeBuildings,width=500)
+        self.randomiseBtn = cmds.button( label='Randomize all values', command=self.randomiseValues,width=500)
+
 
         cmds.showWindow()
 
@@ -169,6 +171,18 @@ class BG_Window(object):
         else:
             return False
 
+    def randomiseValues(self,*args):
+        buildingRangeMin=randInteger(10,100)#Sets the lower bound as a var so upper cant be smaller than lower
+        cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value1=buildingRangeMin)#Updates the value to a random one
+        cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value2=randInteger(buildingRangeMin,10000))#Updates the value to a random one
+
+        buildingRangeMin=randInteger(10,100)#Sets the lower bound as a var so upper cant be smaller than lower
+        cmds.floatFieldGrp(self.inpBuildingWidth, edit=True, value1=buildingRangeMin)#Updates the value to a random one
+        cmds.floatFieldGrp(self.inpBuildingWidth, edit=True, value2=randInteger(buildingRangeMin,10000))#Updates the value to a random one
+        
+        buildingRangeMin=randInteger(10,100)#Sets the lower bound as a var so upper cant be smaller than lower
+        cmds.floatFieldGrp(self.inpBuildingDepth, edit=True, value1=buildingRangeMin)#Updates the value to a random one
+        cmds.floatFieldGrp(self.inpBuildingDepth, edit=True, value2=randInteger(buildingRangeMin,10000))#Updates the value to a random one        
 
     def genBuildings(self, *args):
         
