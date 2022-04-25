@@ -6,13 +6,15 @@ import time
 import maya.mel as mel
 
 
-versionNo=6
 
 layoutMode="Uniform"
 effects=[]#Effects to apply to a building
 pastPositions=[]
 
 midFacesX=[53,51,63,61,71,73,23,21,11,13,3,1]
+
+
+
 
 #functions----------------------------------------
 
@@ -25,21 +27,23 @@ def randInteger(min,max):
 #Applies effects from the list to the currently selected building
 def addBuildingEffects(effect,buildingName):
     print("Applying",effect,"to",buildingName)
-    if effect=="scaleTop":#Scale top in
+
+    if effect=="addWindows":#Adds windows
+        cmds.polyExtrudeFacet(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]',kft=False, ltz=-.75, ls=(.5, .8, 0),smoothingAngle=45)
+
+    elif effect=="scaleTop":#Scale top in
         cmds.select(buildingName+'.e[30:34]')
         cmds.select(buildingName+'.e[25:29]',add=True)
-        cmds.scale(randFloat(0.5,1.5),randFloat(0.5,1.5),1)
-
-    elif effect=="addWindows":#Adds windows
-        for face in midFacesX:
-            cmds.select(buildingName+'.e['+str(face)+']',add=True)#Selects the faces from the midpoint list
-        cmds.polyExtrudeFacet(localScaleX=1)
+        cmds.scale(randFloat(1,1.5),randFloat(1,1.5),1)
 
     elif effect=="bevel":#Bevels edges
-        edgeRingVal=randInteger(0,130)
-        print("Edge ring being beveled:",edgeRingVal)
-        cmds.polySelect(buildingName, edgeRing=edgeRingVal)
+        cmds.polySelect(buildingName, edgeRing=randInteger(0,130))
+        cmds.polySelect(buildingName, edgeRing=50)
         cmds.polyBevel(segments=randInteger(1,12),offset=randFloat(0.1,0.9),offsetAsFraction=True) #Applies bevel (offset=fraction value in maya ui)
+
+    elif effect=="rotate":
+        rotateVal=(0,randFloat(5,359),0)
+        cmds.xform(buildingName,rotation=rotateVal,worldSpace=True,centerPivots=True,absolute=True)#Rotates the building
 
 
 #main-------------------------------------------------
@@ -85,7 +89,7 @@ class BG_Window(object):
     def __init__(self):
         #Window
         self.window = "BG_Window"
-        self.title = ("Building Generator v"+str(versionNo))
+        self.title = ("Building Generator - Callum Stuart")
         self.size = (600, 400)
 
         if cmds.window(self.window, exists = True):#Checks if existing window is open
@@ -113,21 +117,23 @@ class BG_Window(object):
         self.inpBuildingDepth = cmds.floatFieldGrp( numberOfFields=2, label='Building Depth range:', value1=10, value2=20)
         self.inpNoBuildings = cmds.intSliderGrp(field=True, label='Number of buildings:', minValue=1,maxValue=100000, value=1000)
 
-        #Effect Tickboxes
+        #Effect Tickboxes and sliders
         cmds.rowColumnLayout(nc=2)#Changes the layout so can have 2 items next to each other
-        self.inpEffectAddWindows=cmds.checkBox(label='Add Windows')
-        self.inpEffectAddWindowsChance = cmds.intSliderGrp(field=True, label='% Chance of this being applied to a building:', minValue=1,maxValue=100, value=50)
+        self.inpEffectAddWindows=cmds.checkBox(label='Add Windows',changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddWindowsChance))#Checkbox for toggling the effect. Lambda is used to define the changecommand without actually running it, so a variable can be passed and the one function can manage all slider toggles
+        self.inpEffectAddWindowsChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
 
-        self.inpEffectBevel=cmds.checkBox(label='Bevel Top edges')
-        self.inpEffectBevelChance = cmds.intSliderGrp(field=True, label='% Chance of this effect being applied to a building:', minValue=1,maxValue=100, value=50)
+        self.inpEffectBevel=cmds.checkBox(label='Bevel Top edges',changeCommand=lambda x: self.toggleSliderLock(self.inpEffectBevelChance))
+        self.inpEffectBevelChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
-        self.inpEffectScaleTop=cmds.checkBox(label='Scale In Top edges')#, onCommand=self.toggleSliderLock(self.inpEffectScaleTopChance,"on"),offCommand=self.toggleSliderLock(self.inpEffectScaleTopChance,"off"))
-        self.inpEffectScaleTopChance = cmds.intSliderGrp(field=True, label='% Chance of this effect being applied to a building:', minValue=1,maxValue=100, value=50,enable=False)
+        self.inpEffectScaleTop=cmds.checkBox(label='Scale Top Edges', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectScaleTopChance))
+        self.inpEffectScaleTopChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
-        cmds.separator()
+        self.inpEffectRotate=cmds.checkBox(label='Rotate building', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectRotateChance))
+        self.inpEffectRotateChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
+
+        cmds.separator(style='none')#Resets the layout to one after the other
         cmds.columnLayout(adjustableColumn = True)
-        cmds.separator()
 
         #Gen button
         self.buildBtn = cmds.button( label='Create Buildings', command=self.genBuildings,width=500)
@@ -135,12 +141,16 @@ class BG_Window(object):
 
         cmds.showWindow()
 
-    def toggleSliderLock(self, slider,state):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
-        if state=="on":
-            cmds.intSliderGrp(slider,enable=True)
-        elif state=="off":
-            cmds.intSliderGrp(slider,enable=True)
-
+    def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
+        print(slider)
+        try:#Used so doesn't crash when running before the sliders exist            
+            if  cmds.intSliderGrp(slider,query=True,enable=True):
+                cmds.intSliderGrp(slider,edit=True,enable=False)
+            else:
+                cmds.intSliderGrp(slider,edit=True,enable=True)
+        except AttributeError as e:
+            print(e)
+        return None
 
     def removeBuildings(self, *args):#Removes the last generated city
         try:
@@ -177,15 +187,15 @@ class BG_Window(object):
 
         effects=[]#Clears effects on each re-run
         
-        #gets effects
+        #gets effects (In the order that works best to apply in)
+        if cmds.checkBox(self.inpEffectScaleTop, query=True, value=True):#Queries if check box is checked
+            effects.append(["scaleTop",cmds.intSliderGrp(self.inpEffectScaleTopChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectAddWindows, query=True, value=True):#Queries if check box is checked
-            
             effects.append(["addWindows",cmds.intSliderGrp(self.inpEffectAddWindowsChance, query=True, value=True)])#Adds the effect and its % chance of being applied to an array
         if cmds.checkBox(self.inpEffectBevel, query=True, value=True):#Queries if check box is checked
             effects.append(["bevel",cmds.intSliderGrp(self.inpEffectBevelChance, query=True, value=True)])#Adds the effect to the list of effects to use
-        if cmds.checkBox(self.inpEffectScaleTop, query=True, value=True):#Queries if check box is checked
-            effects.append(["scaleTop",cmds.intSliderGrp(self.inpEffectScaleTopChance, query=True, value=True)])#Adds the effect to the list of effects to use
-
+        if cmds.checkBox(self.inpEffectRotate, query=True, value=True):#Queries if check box is checked
+            effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
 
         #main loop
         if cmds.objExists('Buildings'):
