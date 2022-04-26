@@ -118,7 +118,7 @@ class BG_Window(object):
         self.inpBuildingHeight = cmds.floatFieldGrp( numberOfFields=2, label='Building Height range:', value1=10, value2=100)
         self.inpBuildingWidth = cmds.floatFieldGrp( numberOfFields=2, label='Building Width range:', value1=10, value2=20)
         self.inpBuildingDepth = cmds.floatFieldGrp( numberOfFields=2, label='Building Depth range:', value1=10, value2=20)
-        self.inpNoBuildings = cmds.intSliderGrp(field=True, label='Number of buildings:', minValue=1,maxValue=10000, value=1000)
+        self.inpNoBuildings = cmds.intSliderGrp(field=True, label='Number of buildings:', minValue=1,maxValue=5000, value=1000)
 
         #Effect Tickboxes and sliders
         cmds.rowColumnLayout(nc=2)#Changes the layout so can have 2 items next to each other
@@ -174,15 +174,15 @@ class BG_Window(object):
     def randomiseValues(self,*args):
         buildingRangeMin=randInteger(10,100)#Sets the lower bound as a var so upper cant be smaller than lower
         cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value1=buildingRangeMin)#Updates the value to a random one
-        cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value2=randInteger(buildingRangeMin,10000))#Updates the value to a random one
+        cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value2=randInteger(buildingRangeMin,100))#Updates the value to a random one
 
         buildingRangeMin=randInteger(10,100)#Sets the lower bound as a var so upper cant be smaller than lower
         cmds.floatFieldGrp(self.inpBuildingWidth, edit=True, value1=buildingRangeMin)#Updates the value to a random one
-        cmds.floatFieldGrp(self.inpBuildingWidth, edit=True, value2=randInteger(buildingRangeMin,10000))#Updates the value to a random one
+        cmds.floatFieldGrp(self.inpBuildingWidth, edit=True, value2=randInteger(buildingRangeMin,100))#Updates the value to a random one
         
         buildingRangeMin=randInteger(10,100)#Sets the lower bound as a var so upper cant be smaller than lower
         cmds.floatFieldGrp(self.inpBuildingDepth, edit=True, value1=buildingRangeMin)#Updates the value to a random one
-        cmds.floatFieldGrp(self.inpBuildingDepth, edit=True, value2=randInteger(buildingRangeMin,10000))#Updates the value to a random one        
+        cmds.floatFieldGrp(self.inpBuildingDepth, edit=True, value2=randInteger(buildingRangeMin,100))#Updates the value to a random one        
 
     def genBuildings(self, *args):
         
