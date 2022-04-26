@@ -60,19 +60,12 @@ class ProgressClass(object):#Class used for the progress bar
 
 
 
-    def startProgress(self,maxProgress):#Opens the progress bar
-        self.maxProgress=maxProgress
-        self.progressVal=0
-        self.progressWindow=cmds.progressWindow(isInterruptable=1)
-
-
-
 #Menu Setup
 class BG_Window(object):
     def __init__(self):
         #Window
         self.window = "BG_Window"
-        self.title = ("Building Generator v"+str(versionNo))
+        self.title = ("City Generator")
         self.size = (600, 400)
 
         if cmds.window(self.window, exists = True):#Checks if existing window is open
@@ -203,11 +196,17 @@ class BG_Window(object):
             cmds.group(empty=True, name='Buildings')#Creates the group that the buildings will be placed into
         #cmds.polyPlane(width=valBuildingRangeMax*2,height=valBuildingRangeMax*2,name="Ground Plane") #creates ground plane
         
+        progressVal=0
+        self.progressWindow=cmds.progressWindow(progress=progressVal,isInterruptable=1,maximum=valNoBuildings+1,status="City Generation Progress")
+
         print("Layout Mode:",layoutMode)
 
-        ProgressClass.startProgress(self,valNoBuildings)#Opens up the progress bar window, passing the maximum number of buildings to it so it always steps by 1 (Cant step by a float val
         for buildingNo in range(1,valNoBuildings+1):#Plus 1 so first building is building 1 but still exact range
-            if cmds.progressWindow(query=1, isCancelled=1) :
+            if cmds.progressWindow(self.progressWindow,query=1, isCancelled=1) :
+                cmds.progressWindow(self.progressWindow,endProgress=1)
+                print("Exited by the user")
+                break
+            else:
                 buildingName=("Building_"+str(buildingNo))#Names the buildings in the format Building_1
                 #generates dimensions for the building
                 buildingHeight=randFloat(valBuildingHeightMin,valBuildingHeightMax)
@@ -247,12 +246,9 @@ class BG_Window(object):
                         addBuildingEffects(effect,buildingName)#Apply the effect
                 cmds.parent(buildingName,"Buildings")
                 
-                ProgressClass.updateProgress(self)#Steps the progress bar by a value of 1 (The max val adjusts so stepping by 1 is fine)
+                progressVal+=1#Increments the progress bar percentage
+        cmds.progressWindow(self.progressWindow,endProgress=1)
 
-            elif self.continueGeneration==False:#If the user cancels the generation operation
-                print("Canceled by user")
-                break
-        cmds.progressWindow(self.progressWindow,edit=True,endProgress=1)
 print("\n"*30)
 print("Starting...")
 #Main startup
