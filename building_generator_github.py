@@ -53,12 +53,11 @@ def addBuildingEffects(effect,buildingName):
 
 class ProgressClass(object):#Class used for the progress bar
     def updateProgress(self):#Function used to update the progress bar and close it when finished
-        cmds.progressBar(self.progressBar, edit=True, step=1,isInterruptable=True)
+        cmds.progressWindow(self.progressWindow, edit=True, step=1,isInterruptable=True)
         self.progressVal+=1#Increments progress val by 1 (Less intense then querying the progress bar all the time)
-        if self.progressVal==self.maxProgress:
-            # progressText=str(self.progressVal,"/",self.maxProgress)
-            # cmds.text(self.finishedText,edit=True,label=progressText)
+        if self.progressVal==self.maxProgress:#If the bar reaches 100%
             cmds.deleteUI(self.window, window=True)#Closes window
+
 
 
     def startProgress(self,maxProgress):#Opens the progress bar
@@ -71,16 +70,16 @@ class ProgressClass(object):#Class used for the progress bar
 
         #Window
         self.title = ("City Generation Progress")
-        self.size = (800, 800)
-        self.window = cmds.window(self.window, title=self.title,widthHeight=self.size)#Creates the window
+        #self.size = (1280, 720)
+        self.window = cmds.window(self.window, title=self.title)#,widthHeight=self.size)#Creates the window
         
         cmds.columnLayout(adjustableColumn = True)#create layout
         
-        cmds.text(self.title)# title text
+        # cmds.text(self.title)# title text
         
-        cmds.separator(height=20)# separator
+        # cmds.separator(height=20)# separator
 
-        self.progressBar = cmds.progressBar(maxValue=maxProgress, width=300,visible=True,backgroundColor=[0,0,0])#Creates the progress bar in the UI window
+        self.progressWindow = cmds.progressWindow(maxValue=maxProgress, width=300,visible=True,backgroundColor=[0,0,0])#Creates the progress bar in the UI window
         self.finishedText=cmds.text("Finished!",visible=False)
         self.cancelBtn = cmds.button( label='Cancel', command=self.cancelGeneration,width=500)
         cmds.showWindow()#Displays the window
@@ -273,6 +272,10 @@ class BG_Window(object):
                 cmds.parent(buildingName,"Buildings")
                 
                 ProgressClass.updateProgress(self)#Steps the progress bar by a value of 1 (The max val adjusts so stepping by 1 is fine)
+
+            elif self.continueGeneration==False:#If the user cancels the generation operation
+                print("Canceled by user")
+                break
 
 print("\n"*30)
 print("Starting...")
