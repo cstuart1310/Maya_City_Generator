@@ -63,27 +63,7 @@ class ProgressClass(object):#Class used for the progress bar
     def startProgress(self,maxProgress):#Opens the progress bar
         self.maxProgress=maxProgress
         self.progressVal=0
-        self.window = "City Generation Progress"
-
-        if cmds.window(self.window, exists = True):#Checks if existing window is open
-            cmds.deleteUI(self.window, window=True)#Closes existing window
-
-        #Window
-        self.title = ("City Generation Progress")
-        #self.size = (1280, 720)
-        self.window = cmds.window(self.window, title=self.title)#,widthHeight=self.size)#Creates the window
-        
-        cmds.columnLayout(adjustableColumn = True)#create layout
-        
-        # cmds.text(self.title)# title text
-        
-        # cmds.separator(height=20)# separator
-
-        self.progressWindow = cmds.progressWindow(maxValue=maxProgress, width=300,visible=True,backgroundColor=[0,0,0])#Creates the progress bar in the UI window
-        self.finishedText=cmds.text("Finished!",visible=False)
-        self.cancelBtn = cmds.button( label='Cancel', command=self.cancelGeneration,width=500)
-        cmds.showWindow()#Displays the window
-
+        self.progressWindow=cmds.progressWindow(isInterruptable=1)
 
 
 
@@ -157,8 +137,6 @@ class BG_Window(object):
             print(e)
         return None
 
-    def cancelGeneration():
-        self.continueGeneration=False
 
     def removeBuildings(self, *args):#Removes the last generated city
         try:
@@ -227,12 +205,10 @@ class BG_Window(object):
         
         print("Layout Mode:",layoutMode)
 
-        ProgressClass.startProgress(self,valNoBuildings)#Opens up the progress bar window, passing the maximum number of buildings to it so it always steps by 1 (Cant step by a float val)
-
+        ProgressClass.startProgress(self,valNoBuildings)#Opens up the progress bar window, passing the maximum number of buildings to it so it always steps by 1 (Cant step by a float val
         for buildingNo in range(1,valNoBuildings+1):#Plus 1 so first building is building 1 but still exact range
-            if self.continueGeneration==True:
+            if cmds.progressWindow(query=1, isCancelled=1) :
                 buildingName=("Building_"+str(buildingNo))#Names the buildings in the format Building_1
-
                 #generates dimensions for the building
                 buildingHeight=randFloat(valBuildingHeightMin,valBuildingHeightMax)
                 buildingWidth=randFloat(valBuildingWidthMin,valBuildingWidthMax)
@@ -276,7 +252,7 @@ class BG_Window(object):
             elif self.continueGeneration==False:#If the user cancels the generation operation
                 print("Canceled by user")
                 break
-
+        cmds.progressWindow(self.progressWindow,edit=True,endProgress=1)
 print("\n"*30)
 print("Starting...")
 #Main startup
