@@ -165,7 +165,7 @@ class BG_Window(object):
         #misc variables that need to be set once outside the loop so they can iterate during the loop
         prevPosition=valBuildingRangeMin#Used for placing the first building in uniform mode (So it's placed in the first corner)
         zVal=valBuildingRangeMin#Used to lay out the buildings in rows
-        self.continueGeneration=True#Used to quit mid-way through city generation
+        createdBuildings=0
 
         effects=[]#Clears effects on each re-run
         
@@ -187,54 +187,54 @@ class BG_Window(object):
         #cmds.polyPlane(width=valBuildingRangeMax*2,height=valBuildingRangeMax*2,name="Ground Plane") #creates ground plane
         
         print("Layout Mode:",layoutMode)
-        self.progressWindow=cmds.progressWindow(status="City Generation Progress",isInterruptable=1,maxValue=valNoBuildings)#,steps=100/valNoBuildings)#Starts the (invisible) progressWindow, used to catch the ESC key to exit
+        cmds.progressWindow(endProgress=1)#Removes any existing progress windows from past runs
+        self.progressWindow=cmds.progressWindow(title="City Generation Progress",status="City Generation Progress",isInterruptable=1,maxValue=valNoBuildings)#,steps=100/valNoBuildings)#Starts the (invisible) progressWindow, used to catch the ESC key to exit
         for buildingNo in range(1,valNoBuildings+1):#Plus 1 so first building is building 1 but still exact range
 
-            cmds.progressWindow(self.progressWindow,edit=True, step=1)#Starts the (invisible) progressWindow, used to catch the ESC key to exit
+            cmds.progressWindow(self.progressWindow,edit=True, step=1, status=("Finished "+str(buildingNo)+"/"+str(valNoBuildings)+" buildings"))#Starts the (invisible) progressWindow, used to catch the ESC key to exit
             if cmds.progressWindow(self.progressWindow,query=1, isCancelled=1):
                 break
- 
-            if self.continueGeneration==True:
-                buildingName=("Building_"+str(buildingNo))#Names the buildings in the format Building_1
+            buildingName=("Building_"+str(buildingNo))#Names the buildings in the format Building_1
 
-                #generates dimensions for the building
-                buildingHeight=randFloat(valBuildingHeightMin,valBuildingHeightMax)
-                buildingWidth=randFloat(valBuildingWidthMin,valBuildingWidthMax)
-                buildingDepth=randFloat(valBuildingDepthMin,valBuildingDepthMax)
+            #generates dimensions for the building
+            buildingHeight=randFloat(valBuildingHeightMin,valBuildingHeightMax)
+            buildingWidth=randFloat(valBuildingWidthMin,valBuildingWidthMax)
+            buildingDepth=randFloat(valBuildingDepthMin,valBuildingDepthMax)
 
-                cmds.polyCube(width=buildingWidth,height=buildingHeight,depth=buildingDepth,name=buildingName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a building
-                
-                #Generates the position for the building to be placed (Spawns at 0,0 by default)
-                if layoutMode=="Random":#Randomly places buildings (May cause collisions)
-                    buildingPosition=[randFloat(valBuildingRangeMin,valBuildingRangeMax),buildingHeight/2,randFloat(valBuildingRangeMin,valBuildingRangeMax)] #Divs height by 2 because buildings are placed at 0 so half clips below
-                
-                elif layoutMode=="Uniform":#Places buildings in a grid format with set spacing
-                    buildingPosition=[prevPosition,buildingHeight/2,zVal]
-                    prevPosition=prevPosition+(buildingWidth*2)
-                    if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
-                        prevPosition=valBuildingRangeMin#Resets the building to the left side
-                        zVal=zVal+buildingDepth*3 #Starts placing buildings on the next row
-                
-                elif layoutMode=="Uniform with spacing variation":#Places buildings in a grid format with random (within range) spacing
-                    buildingPosition=[prevPosition,buildingHeight/randFloat(1.5,2.5),zVal]
-                    prevPosition=prevPosition+(buildingWidth*randFloat(1.3,3.5))
-                    if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
-                        prevPosition=valBuildingRangeMin#Resets the building to the left side
-                        zVal=zVal+buildingDepth*randFloat(2,3.5) #Starts placing buildings on the next row            
+            cmds.polyCube(width=buildingWidth,height=buildingHeight,depth=buildingDepth,name=buildingName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a building
+            
+            #Generates the position for the building to be placed (Spawns at 0,0 by default)
+            if layoutMode=="Random":#Randomly places buildings (May cause collisions)
+                buildingPosition=[randFloat(valBuildingRangeMin,valBuildingRangeMax),buildingHeight/2,randFloat(valBuildingRangeMin,valBuildingRangeMax)] #Divs height by 2 because buildings are placed at 0 so half clips below
+            
+            elif layoutMode=="Uniform":#Places buildings in a grid format with set spacing
+                buildingPosition=[prevPosition,buildingHeight/2,zVal]
+                prevPosition=prevPosition+(buildingWidth*2)
+                if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
+                    prevPosition=valBuildingRangeMin#Resets the building to the left side
+                    zVal=zVal+buildingDepth*3 #Starts placing buildings on the next row
+            
+            elif layoutMode=="Uniform with spacing variation":#Places buildings in a grid format with random (within range) spacing
+                buildingPosition=[prevPosition,buildingHeight/randFloat(1.5,2.5),zVal]
+                prevPosition=prevPosition+(buildingWidth*randFloat(1.3,3.5))
+                if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
+                    prevPosition=valBuildingRangeMin#Resets the building to the left side
+                    zVal=zVal+buildingDepth*randFloat(2,3.5) #Starts placing buildings on the next row            
 
-                cmds.xform(buildingName,translation=buildingPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the building to the generated position
+            cmds.xform(buildingName,translation=buildingPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the building to the generated position
 
-            #Applies effects to current building
+        #Applies effects to current building
 
-                for effectData in effects: #Loops through each piece of data in the 2d array
-                    effect=effectData[0]
-                    effectChance=effectData[1]
-    
-                    print("Effect Data",effectData)
-                    if self.useEffect(effectChance)==True:#If it's selected to use the effect
-                        addBuildingEffects(effect,buildingName)#Apply the effect
-                cmds.parent(buildingName,"Buildings")
-                
+            for effectData in effects: #Loops through each piece of data in the 2d array
+                effect=effectData[0]
+                effectChance=effectData[1]
+
+                print("Effect Data",effectData)
+                if self.useEffect(effectChance)==True:#If it's selected to use the effect
+                    addBuildingEffects(effect,buildingName)#Apply the effect
+            cmds.parent(buildingName,"Buildings")
+            createdBuildings+=1 #increments the counter for the status bar by 1
+            
         cmds.progressWindow(self.progressWindow,endProgress=1)
 
 print("\n"*30)
