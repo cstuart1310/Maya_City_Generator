@@ -51,43 +51,6 @@ def addBuildingEffects(effect,buildingName):
 
 #main-------------------------------------------------
 
-class ProgressClass(object):#Class used for the progress bar
-    def updateProgress(self):#Function used to update the progress bar and close it when finished
-        cmds.progressBar(self.progressBar, edit=True, step=1,isInterruptable=True)
-        self.progressVal+=1#Increments progress val by 1 (Less intense then querying the progress bar all the time)
-        if self.progressVal==self.maxProgress:
-            # progressText=str(self.progressVal,"/",self.maxProgress)
-            # cmds.text(self.finishedText,edit=True,label=progressText)
-            cmds.deleteUI(self.window, window=True)#Closes window
-
-
-    def startProgress(self,maxProgress):#Opens the progress bar
-        self.maxProgress=maxProgress
-        self.progressVal=0
-        self.window = "City Generation Progress"
-
-        if cmds.window(self.window, exists = True):#Checks if existing window is open
-            cmds.deleteUI(self.window, window=True)#Closes existing window
-
-        #Window
-        self.title = ("City Generation Progress")
-        self.size = (800, 800)
-        self.window = cmds.window(self.window, title=self.title,widthHeight=self.size)#Creates the window
-        
-        cmds.columnLayout(adjustableColumn = True)#create layout
-        
-        cmds.text(self.title)# title text
-        
-        cmds.separator(height=20)# separator
-
-        self.progressBar = cmds.progressBar(maxValue=maxProgress, width=300,visible=True,backgroundColor=[0,0,0])#Creates the progress bar in the UI window
-        self.finishedText=cmds.text("Finished!",visible=False)
-        self.cancelBtn = cmds.button( label='Cancel', command=self.cancelGeneration,width=500)
-        cmds.showWindow()#Displays the window
-
-
-
-
 #Menu Setup
 class BG_Window(object):
     def __init__(self):
@@ -158,9 +121,6 @@ class BG_Window(object):
             print(e)
         return None
 
-    def cancelGeneration():
-        self.continueGeneration=False
-
     def removeBuildings(self, *args):#Removes the last generated city
         try:
             cmds.delete("Buildings") #Deletes the buildings group
@@ -227,8 +187,6 @@ class BG_Window(object):
         #cmds.polyPlane(width=valBuildingRangeMax*2,height=valBuildingRangeMax*2,name="Ground Plane") #creates ground plane
         
         print("Layout Mode:",layoutMode)
-
-        ProgressClass.startProgress(self,valNoBuildings)#Opens up the progress bar window, passing the maximum number of buildings to it so it always steps by 1 (Cant step by a float val)
         self.progressWindow=cmds.progressWindow(status="City Generation Progress",isInterruptable=1,maxValue=valNoBuildings)#,steps=100/valNoBuildings)#Starts the (invisible) progressWindow, used to catch the ESC key to exit
         for buildingNo in range(1,valNoBuildings+1):#Plus 1 so first building is building 1 but still exact range
 
@@ -277,8 +235,7 @@ class BG_Window(object):
                         addBuildingEffects(effect,buildingName)#Apply the effect
                 cmds.parent(buildingName,"Buildings")
                 
-                ProgressClass.updateProgress(self)#Steps the progress bar by a value of 1 (The max val adjusts so stepping by 1 is fine)
-        cmds.progressWindow(endProgress=1)
+        cmds.progressWindow(self.progressWindow,endProgress=1)
 
 print("\n"*30)
 print("Starting...")
