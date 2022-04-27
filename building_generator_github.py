@@ -72,9 +72,9 @@ class BG_Window(object):
         cmds.separator(height=20)
 
         self.inpLayoutMode = cmds.optionMenu( label='Layout mode',width=200)#Creates the dropdown menu for the layout mode options
-        cmds.menuItem(label='Uniform')#Layout mode option 1
-        cmds.menuItem(label='Uniform with spacing variation')
-        cmds.menuItem(label='Random')#Layout mode option
+        cmds.menuItem(label='Uniform with spacing variation') #Layout mode option for grid layout with some random leeway (Best looking one)
+        cmds.menuItem(label='Uniform')#Layout mode option for grid layout
+        cmds.menuItem(label='Random')#Layout mode option for entirely random positions
         
 
         #Var inputs
@@ -111,15 +111,10 @@ class BG_Window(object):
         cmds.showWindow()
 
     def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
-        print(slider)
-        try:#Used so doesn't crash when running before the sliders exist            
-            if  cmds.intSliderGrp(slider,query=True,enable=True):
-                cmds.intSliderGrp(slider,edit=True,enable=False)
-            else:
-                cmds.intSliderGrp(slider,edit=True,enable=True)
-        except AttributeError as e:
-            print(e)
-        return None
+        if  cmds.intSliderGrp(slider,query=True,enable=True):#If slider is enabled
+            cmds.intSliderGrp(slider,edit=True,enable=False)#Disable it
+        elif cmds.intSliderGrp(slider,query=True,enable=False):#If slider is disabled
+            cmds.intSliderGrp(slider,edit=True,enable=True)#Enable it
 
     def removeBuildings(self, *args):#Removes the last generated city
         try:
@@ -136,6 +131,7 @@ class BG_Window(object):
             return False
 
     def randomiseValues(self,*args):
+        #Randomizes the height width and depth
         buildingRangeMin=randInteger(10,100)#Sets the lower bound as a var so upper cant be smaller than lower
         cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value1=buildingRangeMin)#Updates the value to a random one
         cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value2=randInteger(buildingRangeMin,100))#Updates the value to a random one
@@ -147,6 +143,29 @@ class BG_Window(object):
         buildingRangeMin=randInteger(10,100)#Sets the lower bound as a var so upper cant be smaller than lower
         cmds.floatFieldGrp(self.inpBuildingDepth, edit=True, value1=buildingRangeMin)#Updates the value to a random one
         cmds.floatFieldGrp(self.inpBuildingDepth, edit=True, value2=randInteger(buildingRangeMin,100))#Updates the value to a random one        
+
+        cmds.intSliderGrp(self.inpNoBuildings, edit=True, value=randInteger(5,5000))#Randomizes the number of buildings and updates the slider input box
+
+        #Randomizes the effects and their likeliness
+        checkBoxBool=random.choice([True, False])#Picks a true or false value for the effect (Is a var so it can sync with the slider lock)
+        cmds.checkBox(self.inpEffectAddWindows, edit=True, value=checkBoxBool)#Edits the checkbox to the random bool
+        cmds.intSliderGrp(self.inpEffectAddWindowsChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
+        
+        checkBoxBool=random.choice([True, False])
+        cmds.checkBox(self.inpEffectBevel, edit=True, value=checkBoxBool)
+        cmds.intSliderGrp(self.inpEffectBevelChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
+
+        checkBoxBool=random.choice([True, False])
+        cmds.checkBox(self.inpEffectScaleTop, edit=True, value=checkBoxBool)
+        cmds.intSliderGrp(self.inpEffectScaleTopChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
+
+        checkBoxBool=random.choice([True, False])
+        cmds.checkBox(self.inpEffectRotate, edit=True, value=checkBoxBool)
+        cmds.intSliderGrp(self.inpEffectRotateChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
+
+
+        layoutModes=["Uniform with spacing variation","Uniform","Random"]#All of the layout modes in a list so one can be randomly picked
+        cmds.optionMenu(self.inpLayoutMode,edit=True,value=random.choice(layoutModes))#Updates the optionMenu with a random choice from the list
 
     def genBuildings(self, *args):
         
@@ -165,7 +184,7 @@ class BG_Window(object):
         #misc variables that need to be set once outside the loop so they can iterate during the loop
         prevPosition=valBuildingRangeMin#Used for placing the first building in uniform mode (So it's placed in the first corner)
         zVal=valBuildingRangeMin#Used to lay out the buildings in rows
-        createdBuildings=0
+        createdBuildings=0#Counter of buildings finished generating used for the progressWindow to live update with the generation
 
         effects=[]#Clears effects on each re-run
         
