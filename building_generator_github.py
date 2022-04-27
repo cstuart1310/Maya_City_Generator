@@ -6,9 +6,6 @@ import random
 import time
 import maya.mel as mel
 
-
-versionNo=6
-
 layoutMode="Uniform"
 effects=[]#Effects to apply to a building
 pastPositions=[]
@@ -56,7 +53,7 @@ class BG_Window(object):
     def __init__(self):
         #Window
         self.window = "BG_Window"
-        self.title = ("Building Generator v"+str(versionNo))
+        self.title = ("City Generator")
         self.size = (600, 400)
 
         if cmds.window(self.window, exists = True):#Checks if existing window is open
