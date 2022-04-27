@@ -229,8 +229,13 @@ class BG_Window(object):
         print("Layout Mode:",layoutMode)
 
         ProgressClass.startProgress(self,valNoBuildings)#Opens up the progress bar window, passing the maximum number of buildings to it so it always steps by 1 (Cant step by a float val)
-
+        self.progressWindow=cmds.progressWindow(status="City Generation Progress",isInterruptable=1,maxValue=valNoBuildings)#,steps=100/valNoBuildings)#Starts the (invisible) progressWindow, used to catch the ESC key to exit
         for buildingNo in range(1,valNoBuildings+1):#Plus 1 so first building is building 1 but still exact range
+
+            cmds.progressWindow(self.progressWindow,edit=True, step=1)#Starts the (invisible) progressWindow, used to catch the ESC key to exit
+            if cmds.progressWindow(self.progressWindow,query=1, isCancelled=1):
+                break
+ 
             if self.continueGeneration==True:
                 buildingName=("Building_"+str(buildingNo))#Names the buildings in the format Building_1
 
@@ -273,6 +278,7 @@ class BG_Window(object):
                 cmds.parent(buildingName,"Buildings")
                 
                 ProgressClass.updateProgress(self)#Steps the progress bar by a value of 1 (The max val adjusts so stepping by 1 is fine)
+        cmds.progressWindow(endProgress=1)
 
 print("\n"*30)
 print("Starting...")
