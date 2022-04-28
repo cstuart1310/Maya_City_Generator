@@ -68,6 +68,7 @@ class BG_Window(object):
         cmds.separator(height=20)
         cmds.text( label='Group Name' )
         self.inpBuildingGroup = cmds.textField(text="Buildings")
+        self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)
         
         #create layout
         cmds.columnLayout(adjustableColumn = True)
