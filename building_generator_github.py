@@ -6,8 +6,6 @@ import random
 import time
 import maya.mel as mel
 
-
-
 layoutMode="Uniform"
 effects=[]#Effects to apply to a building
 pastPositions=[]
@@ -38,8 +36,9 @@ def addBuildingEffects(effect,buildingName):
         cmds.scale(randFloat(1,1.5),randFloat(1,1.5),1)
 
     elif effect=="bevel":#Bevels edges
-        cmds.polySelect(buildingName, edgeRing=randInteger(0,130))
-        cmds.polySelect(buildingName, edgeRing=50)
+        edgeRingVal=randInteger(0,130)
+        print("Edge ring being beveled:",edgeRingVal)
+        cmds.polySelect(buildingName, edgeRing=edgeRingVal)
         cmds.polyBevel(segments=randInteger(1,12),offset=randFloat(0.1,0.9),offsetAsFraction=True) #Applies bevel (offset=fraction value in maya ui)
 
     elif effect=="rotate":
@@ -49,49 +48,12 @@ def addBuildingEffects(effect,buildingName):
 
 #main-------------------------------------------------
 
-class ProgressClass(object):#Class used for the progress bar
-    def updateProgress(self):#Function used to update the progress bar and close it when finished
-        cmds.progressBar(self.progressBar, edit=True, step=1,isInterruptable=True)
-        self.progressVal+=1#Increments progress val by 1 (Less intense then querying the progress bar all the time)
-        if self.progressVal==self.maxProgress:
-            # progressText=str(self.progressVal,"/",self.maxProgress)
-            # cmds.text(self.finishedText,edit=True,label=progressText)
-            cmds.deleteUI(self.window, window=True)#Closes window
-
-
-    def startProgress(self,maxProgress):#Opens the progress bar
-        self.maxProgress=maxProgress
-        self.progressVal=0
-        self.window = "City Generation Progress"
-
-        if cmds.window(self.window, exists = True):#Checks if existing window is open
-            cmds.deleteUI(self.window, window=True)#Closes existing window
-
-        #Window
-        self.title = ("City Generation Progress")
-        self.size = (800, 800)
-        self.window = cmds.window(self.window, title=self.title,widthHeight=self.size)#Creates the window
-        
-        cmds.columnLayout(adjustableColumn = True)#create layout
-        
-        cmds.text(self.title)# title text
-        
-        cmds.separator(height=20)# separator
-
-        self.progressBar = cmds.progressBar(maxValue=maxProgress, width=300,visible=True,backgroundColor=[0,0,0])#Creates the progress bar in the UI window
-        self.finishedText=cmds.text("Finished!",visible=False)
-        self.cancelBtn = cmds.button( label='Cancel', command=self.cancelGeneration,width=500)
-        cmds.showWindow()#Displays the window
-
-
-
-
 #Menu Setup
 class BG_Window(object):
     def __init__(self):
         #Window
         self.window = "BG_Window"
-        self.title = ("Building Generator - Callum Stuart")
+        self.title = ("City Generator")
         self.size = (600, 400)
 
         if cmds.window(self.window, exists = True):#Checks if existing window is open
@@ -107,9 +69,9 @@ class BG_Window(object):
         cmds.separator(height=20)
 
         self.inpLayoutMode = cmds.optionMenu( label='Layout mode',width=200)#Creates the dropdown menu for the layout mode options
-        cmds.menuItem(label='Uniform')#Layout mode option 1
-        cmds.menuItem(label='Uniform with spacing variation')
-        cmds.menuItem(label='Random')#Layout mode option
+        cmds.menuItem(label='Uniform with spacing variation') #Layout mode option for grid layout with some random leeway (Best looking one)
+        cmds.menuItem(label='Uniform')#Layout mode option for grid layout
+        cmds.menuItem(label='Random')#Layout mode option for entirely random positions
         
 
         #Var inputs
@@ -146,22 +108,14 @@ class BG_Window(object):
         cmds.showWindow()
 
     def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
-        print(slider)
-        try:#Used so doesn't crash when running before the sliders exist            
-            if  cmds.intSliderGrp(slider,query=True,enable=True):
-                cmds.intSliderGrp(slider,edit=True,enable=False)
-            else:
-                cmds.intSliderGrp(slider,edit=True,enable=True)
-        except AttributeError as e:
-            print(e)
-        return None
+        if  cmds.intSliderGrp(slider,query=True,enable=True):#If slider is enabled
+            cmds.intSliderGrp(slider,edit=True,enable=False)#Disable it
+        elif cmds.intSliderGrp(slider,query=True,enable=False):#If slider is disabled
+            cmds.intSliderGrp(slider,edit=True,enable=True)#Enable it
 
-    def cancelGeneration():
-        self.continueGeneration=False
-
-    def removeBuildings(self, *args):#Removes the last generated city
+    def removeBuildings(self, *args):#Removes the last generated city (Whichever name is stored in self.buildinggroup)
         try:
-            cmds.delete("Buildings") #Deletes the buildings group
+            cmds.delete(self.buildingGroup) #Deletes the buildings group
             cmds.delete("Ground_Plane") #Deletes the ground plane
         except ValueError:#Catches in case the user has deleted one or more of these elements
             pass#Does nothing but an except needs to do "something" so this is here
@@ -174,6 +128,7 @@ class BG_Window(object):
             return False
 
     def randomiseValues(self,*args):
+        #Randomizes the height width and depth
         buildingRangeMin=randInteger(10,100)#Sets the lower bound as a var so upper cant be smaller than lower
         cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value1=buildingRangeMin)#Updates the value to a random one
         cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value2=randInteger(buildingRangeMin,100))#Updates the value to a random one
@@ -185,6 +140,29 @@ class BG_Window(object):
         buildingRangeMin=randInteger(10,100)#Sets the lower bound as a var so upper cant be smaller than lower
         cmds.floatFieldGrp(self.inpBuildingDepth, edit=True, value1=buildingRangeMin)#Updates the value to a random one
         cmds.floatFieldGrp(self.inpBuildingDepth, edit=True, value2=randInteger(buildingRangeMin,100))#Updates the value to a random one        
+
+        cmds.intSliderGrp(self.inpNoBuildings, edit=True, value=randInteger(5,5000))#Randomizes the number of buildings and updates the slider input box
+
+        #Randomizes the effects and their likeliness
+        checkBoxBool=random.choice([True, False])#Picks a true or false value for the effect (Is a var so it can sync with the slider lock)
+        cmds.checkBox(self.inpEffectAddWindows, edit=True, value=checkBoxBool)#Edits the checkbox to the random bool
+        cmds.intSliderGrp(self.inpEffectAddWindowsChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
+        
+        checkBoxBool=random.choice([True, False])
+        cmds.checkBox(self.inpEffectBevel, edit=True, value=checkBoxBool)
+        cmds.intSliderGrp(self.inpEffectBevelChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
+
+        checkBoxBool=random.choice([True, False])
+        cmds.checkBox(self.inpEffectScaleTop, edit=True, value=checkBoxBool)
+        cmds.intSliderGrp(self.inpEffectScaleTopChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
+
+        checkBoxBool=random.choice([True, False])
+        cmds.checkBox(self.inpEffectRotate, edit=True, value=checkBoxBool)
+        cmds.intSliderGrp(self.inpEffectRotateChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
+
+
+        layoutModes=["Uniform with spacing variation","Uniform","Random"]#All of the layout modes in a list so one can be randomly picked
+        cmds.optionMenu(self.inpLayoutMode,edit=True,value=random.choice(layoutModes))#Updates the optionMenu with a random choice from the list
 
     def genBuildings(self, *args):
         
@@ -203,7 +181,7 @@ class BG_Window(object):
         #misc variables that need to be set once outside the loop so they can iterate during the loop
         prevPosition=valBuildingRangeMin#Used for placing the first building in uniform mode (So it's placed in the first corner)
         zVal=valBuildingRangeMin#Used to lay out the buildings in rows
-        self.continueGeneration=True#Used to quit mid-way through city generation
+        createdBuildings=0#Counter of buildings finished generating used for the progressWindow to live update with the generation
 
         effects=[]#Clears effects on each re-run
         
@@ -218,59 +196,67 @@ class BG_Window(object):
             effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
 
         #main loop
-        if cmds.objExists('Buildings'):
-            cmds.confirmDialog(title="Warning!",message="A group named Buildings already exists, generated buildings will be placed into it")
+        self.buildingGroup="Buildings"
+        if cmds.objExists(self.buildingGroup):
+            cmds.confirmDialog(title="Warning!",message=("A group named "+self.buildingGroup+" already exists, generated buildings will be placed into it"))
         else:
-            cmds.group(empty=True, name='Buildings')#Creates the group that the buildings will be placed into
+            cmds.group(empty=True, name=self.buildingGroup)#Creates the group that the buildings will be placed into
         #cmds.polyPlane(width=valBuildingRangeMax*2,height=valBuildingRangeMax*2,name="Ground Plane") #creates ground plane
         
         print("Layout Mode:",layoutMode)
-
-        ProgressClass.startProgress(self,valNoBuildings)#Opens up the progress bar window, passing the maximum number of buildings to it so it always steps by 1 (Cant step by a float val)
-
+        cmds.progressWindow(endProgress=1)#Removes any existing progress windows from past runs
+        self.progressWindow=cmds.progressWindow(title="City Generation Progress",status="City Generation Progress",isInterruptable=1,maxValue=valNoBuildings)#,steps=100/valNoBuildings)#Starts the (invisible) progressWindow, used to catch the ESC key to exit
         for buildingNo in range(1,valNoBuildings+1):#Plus 1 so first building is building 1 but still exact range
-            if self.continueGeneration==True:
-                buildingName=("Building_"+str(buildingNo))#Names the buildings in the format Building_1
 
-                #generates dimensions for the building
-                buildingHeight=randFloat(valBuildingHeightMin,valBuildingHeightMax)
-                buildingWidth=randFloat(valBuildingWidthMin,valBuildingWidthMax)
-                buildingDepth=randFloat(valBuildingDepthMin,valBuildingDepthMax)
+            cmds.progressWindow(self.progressWindow,edit=True, step=1, status=("Finished "+str(buildingNo)+"/"+str(valNoBuildings)+" buildings"))#Starts the (invisible) progressWindow, used to catch the ESC key to exit
+            if cmds.progressWindow(self.progressWindow,query=1, isCancelled=1):
+                break
+            buildingName=("Building_"+str(buildingNo))#Names the buildings in the format Building_1
 
-                cmds.polyCube(width=buildingWidth,height=buildingHeight,depth=buildingDepth,name=buildingName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a building
-                
-                #Generates the position for the building to be placed (Spawns at 0,0 by default)
-                if layoutMode=="Random":#Randomly places buildings (May cause collisions)
-                    buildingPosition=[randFloat(valBuildingRangeMin,valBuildingRangeMax),buildingHeight/2,randFloat(valBuildingRangeMin,valBuildingRangeMax)] #Divs height by 2 because buildings are placed at 0 so half clips below
-                
-                elif layoutMode=="Uniform":#Places buildings in a grid format with set spacing
-                    buildingPosition=[prevPosition,buildingHeight/2,zVal]
-                    prevPosition=prevPosition+(buildingWidth*2)
-                    if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
-                        prevPosition=valBuildingRangeMin#Resets the building to the left side
-                        zVal=zVal+buildingDepth*3 #Starts placing buildings on the next row
-                
-                elif layoutMode=="Uniform with spacing variation":#Places buildings in a grid format with random (within range) spacing
-                    buildingPosition=[prevPosition,buildingHeight/randFloat(1.5,2.5),zVal]
-                    prevPosition=prevPosition+(buildingWidth*randFloat(1.3,3.5))
-                    if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
-                        prevPosition=valBuildingRangeMin#Resets the building to the left side
-                        zVal=zVal+buildingDepth*randFloat(2,3.5) #Starts placing buildings on the next row            
+            #generates dimensions for the building
+            buildingHeight=randFloat(valBuildingHeightMin,valBuildingHeightMax)
+            buildingWidth=randFloat(valBuildingWidthMin,valBuildingWidthMax)
+            buildingDepth=randFloat(valBuildingDepthMin,valBuildingDepthMax)
 
+            cmds.polyCube(width=buildingWidth,height=buildingHeight,depth=buildingDepth,name=buildingName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a building
+
+
+            #Generates the position for the building to be placed (Spawns at 0,0 by default)
+            if layoutMode=="Random":#Randomly places buildings (May cause collisions)
+                buildingPosition=[randFloat(valBuildingRangeMin,valBuildingRangeMax),buildingHeight/2,randFloat(valBuildingRangeMin,valBuildingRangeMax)] #Divs height by 2 because buildings are placed at 0 so half clips below
+            
+            elif layoutMode=="Uniform":#Places buildings in a grid format with set spacing
+                buildingPosition=[prevPosition,buildingHeight/2,zVal]
+                prevPosition=prevPosition+(buildingWidth*2)
+                if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
+                    prevPosition=valBuildingRangeMin#Resets the building to the left side
+                    zVal=zVal+buildingDepth*3 #Starts placing buildings on the next row
+            
+            elif layoutMode=="Uniform with spacing variation":#Places buildings in a grid format with random (within range) spacing
+                buildingPosition=[prevPosition,buildingHeight/randFloat(1.5,2.5),zVal]
+                prevPosition=prevPosition+(buildingWidth*randFloat(1.3,3.5))
+                if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
+                    prevPosition=valBuildingRangeMin#Resets the building to the left side
+                    zVal=zVal+buildingDepth*randFloat(2,3.5) #Starts placing buildings on the next row            
+            try:
                 cmds.xform(buildingName,translation=buildingPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the building to the generated position
+            except ValueError:
+                cmds.confirmDialog(title="Error!",message=("A building named "+buildingName+" already exists within the group "+self.buildingGroup+", generation stopped."))
+                break
 
-            #Applies effects to current building
+        #Applies effects to current building
 
-                for effectData in effects: #Loops through each piece of data in the 2d array
-                    effect=effectData[0]
-                    effectChance=effectData[1]
-    
-                    print("Effect Data",effectData)
-                    if self.useEffect(effectChance)==True:#If it's selected to use the effect
-                        addBuildingEffects(effect,buildingName)#Apply the effect
-                cmds.parent(buildingName,"Buildings")
-                
-                ProgressClass.updateProgress(self)#Steps the progress bar by a value of 1 (The max val adjusts so stepping by 1 is fine)
+            for effectData in effects: #Loops through each piece of data in the 2d array
+                effect=effectData[0]
+                effectChance=effectData[1]
+
+                print("Effect Data",effectData)
+                if self.useEffect(effectChance)==True:#If it's selected to use the effect
+                    addBuildingEffects(effect,buildingName)#Apply the effect
+            cmds.parent(buildingName,"Buildings")
+            createdBuildings+=1 #increments the counter for the status bar by 1
+            
+        cmds.progressWindow(self.progressWindow,endProgress=1)
 
 print("\n"*30)
 print("Starting...")
