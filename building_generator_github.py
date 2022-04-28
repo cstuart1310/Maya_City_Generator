@@ -113,9 +113,9 @@ class BG_Window(object):
         elif cmds.intSliderGrp(slider,query=True,enable=False):#If slider is disabled
             cmds.intSliderGrp(slider,edit=True,enable=True)#Enable it
 
-    def removeBuildings(self, *args):#Removes the last generated city
+    def removeBuildings(self, *args):#Removes the last generated city (Whichever name is stored in self.buildinggroup)
         try:
-            cmds.delete("Buildings") #Deletes the buildings group
+            cmds.delete(self.buildingGroup) #Deletes the buildings group
             cmds.delete("Ground_Plane") #Deletes the ground plane
         except ValueError:#Catches in case the user has deleted one or more of these elements
             pass#Does nothing but an except needs to do "something" so this is here
@@ -196,10 +196,11 @@ class BG_Window(object):
             effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
 
         #main loop
-        if cmds.objExists('Buildings'):
-            cmds.confirmDialog(title="Warning!",message="A group named Buildings already exists, generated buildings will be placed into it")
+        self.buildingGroup="Buildings"
+        if cmds.objExists(self.buildingGroup):
+            cmds.confirmDialog(title="Warning!",message=("A group named "+self.buildingGroup+" already exists, generated buildings will be placed into it"))
         else:
-            cmds.group(empty=True, name='Buildings')#Creates the group that the buildings will be placed into
+            cmds.group(empty=True, name=self.buildingGroup)#Creates the group that the buildings will be placed into
         #cmds.polyPlane(width=valBuildingRangeMax*2,height=valBuildingRangeMax*2,name="Ground Plane") #creates ground plane
         
         print("Layout Mode:",layoutMode)
@@ -218,7 +219,8 @@ class BG_Window(object):
             buildingDepth=randFloat(valBuildingDepthMin,valBuildingDepthMax)
 
             cmds.polyCube(width=buildingWidth,height=buildingHeight,depth=buildingDepth,name=buildingName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a building
-            
+
+
             #Generates the position for the building to be placed (Spawns at 0,0 by default)
             if layoutMode=="Random":#Randomly places buildings (May cause collisions)
                 buildingPosition=[randFloat(valBuildingRangeMin,valBuildingRangeMax),buildingHeight/2,randFloat(valBuildingRangeMin,valBuildingRangeMax)] #Divs height by 2 because buildings are placed at 0 so half clips below
@@ -236,8 +238,11 @@ class BG_Window(object):
                 if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
                     prevPosition=valBuildingRangeMin#Resets the building to the left side
                     zVal=zVal+buildingDepth*randFloat(2,3.5) #Starts placing buildings on the next row            
-
-            cmds.xform(buildingName,translation=buildingPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the building to the generated position
+            try:
+                cmds.xform(buildingName,translation=buildingPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the building to the generated position
+            except ValueError:
+                cmds.confirmDialog(title="Error!",message=("A building named "+buildingName+" already exists within the group "+self.buildingGroup+", generation stopped."))
+                break
 
         #Applies effects to current building
 
