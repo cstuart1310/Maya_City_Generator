@@ -36,10 +36,12 @@ def addBuildingEffects(effect,buildingName):
         cmds.scale(randFloat(0.5,1.5),randFloat(0.5,1.5),1)
 
     elif effect=="bevel":#Bevels edges
-        edgeRingVal=randInteger(0,130)
-        print("Edge ring being beveled:",edgeRingVal)
-        cmds.polySelect(buildingName, edgeRing=edgeRingVal)
-        cmds.polyBevel(segments=randInteger(1,12),offset=randFloat(0.1,0.9),offsetAsFraction=True) #Applies bevel (offset=fraction value in maya ui)
+        
+        for bevelLoop in range(1,randInteger(1,20)):#Bevels a random number of edges
+            edgeRingVal=randInteger(0,130)#Picks the edge (ring) to bevel
+            #cmds.polySelect(buildingName, edgeRing=edgeRingVal)
+            cmds.polyBevel(buildingName+".e[25:29]", offset=randFloat(0.1,0.9),offsetAsFraction=True )
+            #cmds.polyBevel(segments=randInteger(1,12),offset=randFloat(0.1,0.9),offsetAsFraction=True) #Applies bevel (offset=fraction value in maya ui)
 
     elif effect=="rotate":
         rotateVal=(0,randFloat(5,359),0)
@@ -258,11 +260,10 @@ class BG_Window(object):
 
         #Applies effects to current building
 
-            for effectData in effects: #Loops through each piece of data in the 2d array
+            for effectData in effects: #Loops through each piece of data in the 2d array (Array contains the effect name and then its % chance of being applied)
                 effect=effectData[0]
                 effectChance=effectData[1]
 
-                print("Effect Data",effectData)
                 if self.useEffect(effectChance)==True:#If it's selected to use the effect
                     addBuildingEffects(effect,buildingName)#Apply the effect
             cmds.parent(buildingName,self.buildingGroup)
