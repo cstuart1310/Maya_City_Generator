@@ -41,6 +41,10 @@ def addBuildingEffects(effect,buildingName):
         rotateVal=(0,randFloat(5,359),0)
         cmds.xform(buildingName,rotation=rotateVal,worldSpace=True,centerPivots=True,absolute=True)#Rotates the building
 
+    elif effect=="UV":
+        print("UV-ing",buildingName)
+        cmds.polyAutoProjection( buildingName+".f[*]" )#Performs an automatic UV on the building
+        cmds.polyLayoutUV( buildingName+".f[*]", layout=2, flipReversed=True, separate=2, scale=1, rotateForBestFit=True)
 
 #main-------------------------------------------------
 
@@ -97,6 +101,7 @@ class BG_Window(object):
         self.inpEffectRotate=cmds.checkBox(label='Rotate building', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectRotateChance))
         self.inpEffectRotateChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
+        self.inpEffectUV=cmds.checkBox(label='Auto UV Buildings')#Doesn't have a chance input because it will always happen on all buildings if selected
 
         cmds.separator(style='none')#Resets the layout to one after the other
         cmds.columnLayout(adjustableColumn = True)
@@ -201,6 +206,8 @@ class BG_Window(object):
             effects.append(["bevel",cmds.intSliderGrp(self.inpEffectBevelChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectRotate, query=True, value=True):#Queries if check box is checked
             effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
+        if cmds.checkBox(self.inpEffectUV, query=True, value=True):#Queries if check box is checked
+            effects.append(["UV",100])#Adds the effect to the list of effects to use (And a 100% likelihood so all buildings are UV'd)
 
         #main loop
         self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)
