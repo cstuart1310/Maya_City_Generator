@@ -61,18 +61,22 @@ class BG_Window(object):
         
         self.window = cmds.window(self.window, title=self.title,widthHeight=self.size)#Creates the window
         
-        #create layout
         cmds.columnLayout(adjustableColumn = True)
         # title text
         cmds.text(self.title)
         # separator
         cmds.separator(height=20)
-
+        cmds.text( label='Group Name' )
+        self.inpBuildingGroup = cmds.textField(text="Buildings")
+        
+        #create layout
+        cmds.columnLayout(adjustableColumn = True)
         self.inpLayoutMode = cmds.optionMenu( label='Layout mode',width=200)#Creates the dropdown menu for the layout mode options
         cmds.menuItem(label='Uniform with spacing variation') #Layout mode option for grid layout with some random leeway (Best looking one)
         cmds.menuItem(label='Uniform')#Layout mode option for grid layout
         cmds.menuItem(label='Random')#Layout mode option for entirely random positions
-        
+        cmds.separator(height=20)
+
 
         #Var inputs
         self.inpBuildingRange = cmds.floatFieldGrp( numberOfFields=2, label='Building distance range:', value1=-1000, value2=1000)
@@ -80,6 +84,7 @@ class BG_Window(object):
         self.inpBuildingWidth = cmds.floatFieldGrp( numberOfFields=2, label='Building Width range:', value1=10, value2=20)
         self.inpBuildingDepth = cmds.floatFieldGrp( numberOfFields=2, label='Building Depth range:', value1=10, value2=20)
         self.inpNoBuildings = cmds.intSliderGrp(field=True, label='Number of buildings:', minValue=1,maxValue=5000, value=1000)
+        cmds.separator(height=20)
 
         #Effect Tickboxes and sliders
         cmds.rowColumnLayout(nc=2)#Changes the layout so can have 2 items next to each other
@@ -196,7 +201,7 @@ class BG_Window(object):
             effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
 
         #main loop
-        self.buildingGroup="Buildings"
+        self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)
         if cmds.objExists(self.buildingGroup):
             cmds.confirmDialog(title="Warning!",message=("A group named "+self.buildingGroup+" already exists, generated buildings will be placed into it"))
         else:
@@ -211,7 +216,7 @@ class BG_Window(object):
             cmds.progressWindow(self.progressWindow,edit=True, step=1, status=("Finished "+str(buildingNo)+"/"+str(valNoBuildings)+" buildings"))#Starts the (invisible) progressWindow, used to catch the ESC key to exit
             if cmds.progressWindow(self.progressWindow,query=1, isCancelled=1):
                 break
-            buildingName=("Building_"+str(buildingNo))#Names the buildings in the format Building_1
+            buildingName=(self.buildingGroup+"_Building_"+str(buildingNo))#Names the buildings in the format Building_1
 
             #generates dimensions for the building
             buildingHeight=randFloat(valBuildingHeightMin,valBuildingHeightMax)
@@ -240,7 +245,8 @@ class BG_Window(object):
                     zVal=zVal+buildingDepth*randFloat(2,3.5) #Starts placing buildings on the next row            
             try:
                 cmds.xform(buildingName,translation=buildingPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the building to the generated position
-            except ValueError:
+            except ValueError as e:
+                print(e)
                 cmds.confirmDialog(title="Error!",message=("A building named "+buildingName+" already exists within the group "+self.buildingGroup+", generation stopped."))
                 break
 
@@ -253,7 +259,7 @@ class BG_Window(object):
                 print("Effect Data",effectData)
                 if self.useEffect(effectChance)==True:#If it's selected to use the effect
                     addBuildingEffects(effect,buildingName)#Apply the effect
-            cmds.parent(buildingName,"Buildings")
+            cmds.parent(buildingName,self.buildingGroup)
             createdBuildings+=1 #increments the counter for the status bar by 1
             
         cmds.progressWindow(self.progressWindow,endProgress=1)
