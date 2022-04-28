@@ -33,7 +33,7 @@ def addBuildingEffects(effect,buildingName):
     elif effect=="scaleTop":#Scale top in
         cmds.select(buildingName+'.e[30:34]')
         cmds.select(buildingName+'.e[25:29]',add=True)
-        cmds.scale(randFloat(1,1.5),randFloat(1,1.5),1)
+        cmds.scale(randFloat(0.5,1.5),randFloat(0.5,1.5),1)
 
     elif effect=="bevel":#Bevels edges
         edgeRingVal=randInteger(0,130)
@@ -54,7 +54,7 @@ class BG_Window(object):
         #Window
         self.window = "BG_Window"
         self.title = ("City Generator")
-        self.size = (600, 400)
+        self.size = (1500, 800)
 
         if cmds.window(self.window, exists = True):#Checks if existing window is open
             cmds.deleteUI(self.window, window=True)#Closes existing window
@@ -114,9 +114,14 @@ class BG_Window(object):
 
     def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
         if  cmds.intSliderGrp(slider,query=True,enable=True):#If slider is enabled
+            print("Disabling slider",slider)
             cmds.intSliderGrp(slider,edit=True,enable=False)#Disable it
         elif cmds.intSliderGrp(slider,query=True,enable=False):#If slider is disabled
             cmds.intSliderGrp(slider,edit=True,enable=True)#Enable it
+            print("Enabling slider",slider)
+        else:
+            cmds.intSliderGrp(slider,edit=True,enable=True)#Enable it
+            print("Enabling slider",slider)
 
     def removeBuildings(self, *args):#Removes the last generated city (Whichever name is stored in self.buildinggroup)
         try:
@@ -268,6 +273,3 @@ print("\n"*30)
 print("Starting...")
 #Main startup
 myWindow = BG_Window()
-
-
-
