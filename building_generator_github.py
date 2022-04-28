@@ -110,6 +110,8 @@ class BG_Window(object):
         self.buildBtn = cmds.button( label='Create Buildings', command=self.genBuildings,width=500)
         self.undoBtn = cmds.button( label='Undo Last City', command=self.removeBuildings,width=500)
         self.randomiseBtn = cmds.button( label='Randomize all values', command=self.randomiseValues,width=500)
+        self.resetBtn = cmds.button( label='Reset all values to defaults', command=self.resetValues,width=500)
+
 
 
         cmds.showWindow()
@@ -172,9 +174,17 @@ class BG_Window(object):
         cmds.checkBox(self.inpEffectRotate, edit=True, value=checkBoxBool)
         cmds.intSliderGrp(self.inpEffectRotateChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
 
+    def resetValues(self,*args):#Resets all values to their defaults
+        cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value1=10,value2=100)#Updates the value to a random one
+        cmds.floatFieldGrp(self.inpBuildingWidth, edit=True, value1=10,value2=20)#Updates the value to a random one        
+        cmds.floatFieldGrp(self.inpBuildingDepth, edit=True, value1=10,value2=20)#Updates the value to a random one
 
-        layoutModes=["Uniform with spacing variation","Uniform","Random"]#All of the layout modes in a list so one can be randomly picked
-        cmds.optionMenu(self.inpLayoutMode,edit=True,value=random.choice(layoutModes))#Updates the optionMenu with a random choice from the list
+        cmds.intSliderGrp(self.inpEffectAddWindowsChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        cmds.intSliderGrp(self.inpEffectBevelChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        cmds.intSliderGrp(self.inpEffectScaleTopChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        cmds.intSliderGrp(self.inpEffectRotateChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        cmds.optionMenu(self.inpLayoutMode,edit=True,value="Uniform with spacing variation")#Updates the optionMenu with a random choice from the list
+
 
     def genBuildings(self, *args):
         
