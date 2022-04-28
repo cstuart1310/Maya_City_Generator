@@ -1,6 +1,4 @@
 #Maya City Generator - Callum Stuart, Birmingham City University Visual Effects
-from fnmatch import translate
-from typing import NewType
 import maya.cmds as cmds
 import random
 import time
