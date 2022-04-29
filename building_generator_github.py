@@ -43,8 +43,9 @@ def addBuildingEffects(effect,buildingName):
 
     elif effect=="UV":
         print("UV-ing",buildingName)
-        cmds.polyAutoProjection( buildingName+".f[*]" )#Performs an automatic UV on the building
-        cmds.polyLayoutUV( buildingName+".f[*]", layout=2, flipReversed=True, separate=2, scale=1, rotateForBestFit=True)
+        cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0 )#Performs an automatic UV on the building
+
+
 
 #main-------------------------------------------------
 
