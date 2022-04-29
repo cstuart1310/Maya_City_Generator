@@ -22,11 +22,12 @@ def randInteger(min,max):
     return random.randint(min,max)
 
 #Applies effects from the list to the currently selected building
-def addBuildingEffects(effect,buildingName):
+def addBuildingEffects(self,effect,buildingName):
     print("Applying",effect,"to",buildingName)
-
+    self.windowBuildings=[]
     if effect=="addWindows":#Adds windows
         cmds.polyExtrudeFacet(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]',kft=False, ltz=-.75, ls=(.5, .8, 0),smoothingAngle=45)
+        self.windowBuildings.append(buildingName)#USed for the texture effect so it knows which buildings to add different glass mats to
 
     elif effect=="scaleTop":#Scale top in
         cmds.select(buildingName+'.e[30:34]')
@@ -44,7 +45,18 @@ def addBuildingEffects(effect,buildingName):
     elif effect=="UV":
         print("UV-ing",buildingName)
         cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0 )#Performs an automatic UV on the building
+        
+        materials=cmds.ls(type='shadingEngine')
+        cmds.sets(forceElement=random.choice(materials))
+        print("Assigned ",materials,"to",buildingName)
 
+        print(self.windowBuildings)
+
+        if buildingName in self.windowBuildings:
+            cmds.select(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]')
+            cmds.sets(forceElement="aiStandardSurface5SG")
+
+            
 
 
 #main-------------------------------------------------
@@ -277,7 +289,7 @@ class BG_Window(object):
                 effectChance=effectData[1]
 
                 if self.useEffect(effectChance)==True:#If it's selected to use the effect
-                    addBuildingEffects(effect,buildingName)#Apply the effect
+                    addBuildingEffects(self,effect,buildingName)#Apply the effect
             cmds.parent(buildingName,self.buildingGroup)
             createdBuildings+=1 #increments the counter for the status bar by 1
             
