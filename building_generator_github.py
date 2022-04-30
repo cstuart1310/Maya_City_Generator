@@ -8,11 +8,6 @@ layoutMode="Uniform"
 effects=[]#Effects to apply to a building
 pastPositions=[]
 
-midFacesX=[53,51,63,61,71,73,23,21,11,13,3,1]
-
-
-
-
 #functions----------------------------------------
 
 #Gets a random value between ranges (Shorter than using full length command each time which makes better readability)
@@ -24,10 +19,10 @@ def randInteger(min,max):
 #Applies effects from the list to the currently selected building
 def addBuildingEffects(self,effect,buildingName):
     print("Applying",effect,"to",buildingName)
-    self.windowBuildings=[]
     if effect=="addWindows":#Adds windows
         cmds.polyExtrudeFacet(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]',kft=False, ltz=-.75, ls=(.5, .8, 0),smoothingAngle=45)
         self.windowBuildings.append(buildingName)#USed for the texture effect so it knows which buildings to add different glass mats to
+        print("Window Buildings",self.windowBuildings)
 
     elif effect=="scaleTop":#Scale top in
         cmds.select(buildingName+'.e[30:34]')
@@ -38,23 +33,21 @@ def addBuildingEffects(self,effect,buildingName):
         edgeRingVal=randInteger(0,130)#Picks the edge (ring) to bevel        
         cmds.polyBevel(buildingName+".e[25:29]", offset=randFloat(0.1,0.9),offsetAsFraction=True )
         
-    elif effect=="rotate":
-        rotateVal=(0,randFloat(5,359),0)
+    elif effect=="rotate":#Rotates the building along the Y axis only
+        rotateVal=(0,randFloat(5,355),0)#Gets a random val (range is 5-355 so the rotation is always noticable)
         cmds.xform(buildingName,rotation=rotateVal,worldSpace=True,centerPivots=True,absolute=True)#Rotates the building
 
     elif effect=="UV":
         print("UV-ing",buildingName)
         cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0 )#Performs an automatic UV on the building
-        
+        cmds.polyEditUV( relative=True, uValue=0.5, vValue=0.5 )#Scales the UV down so it still repeats but not so much that textures look bland
         materials=cmds.ls(type='shadingEngine')
-        cmds.sets(forceElement=random.choice(materials))
+        cmds.sets(forceElement=random.choice(materials))#Assigns a random material from the array to the selected object (A building)
         print("Assigned ",materials,"to",buildingName)
 
-        print(self.windowBuildings)
-
-        if buildingName in self.windowBuildings:
-            cmds.select(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]')
-            cmds.sets(forceElement="aiStandardSurface5SG")
+        if buildingName in self.windowBuildings:#If the selected buildings has had the addWindows effect applied
+            cmds.select(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]')#Select the faces of the windows
+            cmds.sets(forceElement="aiStandardSurface5SG")#Apply the glass material
 
             
 
@@ -217,6 +210,8 @@ class BG_Window(object):
         prevPosition=valBuildingRangeMin#Used for placing the first building in uniform mode (So it's placed in the first corner)
         zVal=valBuildingRangeMin#Used to lay out the buildings in rows
         createdBuildings=0#Counter of buildings finished generating used for the progressWindow to live update with the generation
+        self.windowBuildings=[]#An array of buildings with window geometry so the material can be different to non-window buildings
+
 
         effects=[]#Clears effects on each re-run
         
