@@ -37,13 +37,12 @@ def addBuildingEffects(self,effect,buildingName):
         rotateVal=(0,randFloat(5,355),0)#Gets a random val (range is 5-355 so the rotation is always noticable)
         cmds.xform(buildingName,rotation=rotateVal,worldSpace=True,centerPivots=True,absolute=True)#Rotates the building
 
-    elif effect=="UV":
-        print("UV-ing",buildingName)
-        cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0 )#Performs an automatic UV on the building
-        cmds.polyEditUV( relative=True, uValue=0.5, vValue=0.5 )#Scales the UV down so it still repeats but not so much that textures look bland
+    elif effect=="applyMaterial":
+        print("Applying material to",buildingName)
+        cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(3,3,3) )#Performs an automatic UV on the building
+        
         materials=cmds.ls(type='shadingEngine')
         cmds.sets(forceElement=random.choice(materials))#Assigns a random material from the array to the selected object (A building)
-        print("Assigned ",materials,"to",buildingName)
 
         if buildingName in self.windowBuildings:#If the selected buildings has had the addWindows effect applied
             cmds.select(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]')#Select the faces of the windows
@@ -107,7 +106,7 @@ class BG_Window(object):
         self.inpEffectRotate=cmds.checkBox(label='Rotate building', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectRotateChance))
         self.inpEffectRotateChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
-        self.inpEffectUV=cmds.checkBox(label='Auto UV Buildings')#Doesn't have a chance input because it will always happen on all buildings if selected
+        self.inpEffectapplyMaterial=cmds.checkBox(label='Apply material(s) to buildings')#Doesn't have a chance input because it will always happen on all buildings if selected
 
         cmds.separator(style='none')#Resets the layout to one after the other
         cmds.columnLayout(adjustableColumn = True)
@@ -224,8 +223,8 @@ class BG_Window(object):
             effects.append(["bevel",cmds.intSliderGrp(self.inpEffectBevelChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectRotate, query=True, value=True):#Queries if check box is checked
             effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
-        if cmds.checkBox(self.inpEffectUV, query=True, value=True):#Queries if check box is checked
-            effects.append(["UV",100])#Adds the effect to the list of effects to use (And a 100% likelihood so all buildings are UV'd)
+        if cmds.checkBox(self.inpEffectapplyMaterial, query=True, value=True):#Queries if check box is checked
+            effects.append(["applyMaterial",100])#Adds the effect to the list of effects to use (And a 100% likelihood so all buildings are material-ed)
 
         #main loop
         self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)
@@ -274,7 +273,7 @@ class BG_Window(object):
                 cmds.xform(buildingName,translation=buildingPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the building to the generated position
             except ValueError as e:
                 print(e)
-                cmds.confirmDialog(title="Error!",message=("A building named "+buildingName+" already exists within the group "+self.buildingGroup+", generation stopped."))
+                cmds.confirmDialog(title="Error!",message=("A building named "+buildingName+" already exists, generation stopped. Choose a new group name and retry."))
                 break
 
         #Applies effects to current building
