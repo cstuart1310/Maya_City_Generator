@@ -63,11 +63,13 @@ def addBuildingEffects(self,effect,buildingName):
             randomMatRoof=random.choice(self.materialsWindow.roofMaterials)
             print("Assigning ",randomMatRoof,"as the roof mat for",buildingName)
             
-            if buildingName in self.bevelBuildings:
-                cmds.select(buildingName+'.f[150:154]',buildingName+'.f[20:39]')#Select the faces of the roof (When beveled)
-                
+            if buildingName in self.bevelBuildings and buildingName in self.windowBuildings:
+                cmds.select(buildingName+'.f[537:541]',buildingName+'.f[25:44]')#Select the faces of the roof (When beveled and windows added)
+            if buildingName in self.bevelBuildings and buildingName not in self.windowBuildings:
+                cmds.select(buildingName+'.f[150:154]',buildingName+'.f[20:39]')#Select the faces of the roof (When beveled)                
             else:
                 cmds.select(buildingName+'.f[25:49]')#Select the faces of the roof (When flat)
+                
             cmds.sets(forceElement=randomMatRoof)#Apply a random roof material
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
