@@ -28,10 +28,17 @@ def addBuildingEffects(self,effect,buildingName):
         cmds.select(buildingName+'.e[30:34]')
         cmds.select(buildingName+'.e[25:29]',add=True)
         cmds.scale(randFloat(0.5,1.5),randFloat(0.5,1.5),1)
+    
+    elif effect=="addTower":#Scale top in
+        cmds.select(buildingName+'.e[30:34]')
+        cmds.select(buildingName+'.e[25:29]',add=True)
+        cmds.scale(randFloat(0.5,1.5),randFloat(0.5,1.5),1)
 
     elif effect=="bevel":#Bevels edges
         edgeRingVal=randInteger(0,130)#Picks the edge (ring) to bevel        
         cmds.polyBevel(buildingName+".e[25:29]", offset=randFloat(0.1,0.9),offsetAsFraction=True )
+        self.bevelBuildings.append(buildingName)#USed for the texture effect so it knows which buildings to add different glass mats to
+
         
     elif effect=="rotate":#Rotates the building along the Y axis only
         rotateVal=(0,randFloat(5,355),0)#Gets a random val (range is 5-355 so the rotation is always noticable)
@@ -52,6 +59,18 @@ def addBuildingEffects(self,effect,buildingName):
             cmds.sets(forceElement=randomMatGlass)#Apply a random glass material
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
+        if len(self.materialsWindow.roofMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
+            randomMatRoof=random.choice(self.materialsWindow.roofMaterials)
+            print("Assigning ",randomMatRoof,"as the roof mat for",buildingName)
+            
+            if buildingName in self.bevelBuildings:
+                cmds.select(buildingName+'.f[150:154]',buildingName+'.f[20:39]')#Select the faces of the roof (When beveled)
+                
+            else:
+                cmds.select(buildingName+'.f[25:49]')#Select the faces of the roof (When flat)
+            cmds.sets(forceElement=randomMatRoof)#Apply a random roof material
+            cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
+
 
 
 #main-------------------------------------------------
@@ -69,10 +88,14 @@ class material_Window(object):#Class for the wiondows to do with the material se
         
         if cmds.textScrollList(self.glassMaterialsTSList, query=True, allItems=True) != None:
             self.glassMaterials=cmds.textScrollList(self.glassMaterialsTSList, query=True, allItems=True)
+
+        if cmds.textScrollList(self.roofMaterialsTSList, query=True, allItems=True) != None:
+            self.roofMaterials=cmds.textScrollList(self.roofMaterialsTSList, query=True, allItems=True)
         
         
         print("Building Materials",self.buildingMaterials)
         print("Glass Materials",self.glassMaterials)
+        print("Roof Materials",self.roofMaterials)
 
 
     def clearMaterialList(self,window,TSList,matList,*args):
@@ -114,6 +137,11 @@ class material_Window(object):#Class for the wiondows to do with the material se
         glassMaterialsAppendButton=cmds.button( label='Add to Glass Materials list', command=lambda x: self.addMaterial(self,self.glassMaterials,self.glassMaterialsTSList))#Button to add selections to the list
         glassMaterialsClearButton=cmds.button("Clear Glass Materials list",command=lambda x:self.clearMaterialList(self,self.glassMaterialsTSList,self.glassMaterials))#Removes all items then appends the new array (Helps prevent duplicates))#Button to clear the list
  
+        cmds.text( label='Roof Materials' )#Title for this section
+        self.roofMaterialsTSList=cmds.textScrollList('Roof Materials', append=self.roofMaterials) 
+        roofMaterialsAppendButton=cmds.button( label='Add to Roof Materials list', command=lambda x: self.addMaterial(self,self.roofMaterials,self.roofMaterialsTSList))#Button to add selections to the list
+        roofMaterialsClearButton=cmds.button("Clear Roof Materials list",command=lambda x:self.clearMaterialList(self,self.roofMaterialsTSList,self.roofMaterials))#Removes all items then appends the new array (Helps prevent duplicates))#Button to clear the list
+ 
         
         cmds.separator()
         cmds.rowColumnLayout(numberOfRows=1)#Changes to a 2 column layout for side-by-side buttons
@@ -145,6 +173,7 @@ class BG_Window(object):
         cmds.text(self.title)
         # separator
         cmds.separator(height=20)
+        
         cmds.text( label='Group Name' )
         self.inpBuildingGroup = cmds.textField(text="Buildings")
         self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)
@@ -288,6 +317,7 @@ class BG_Window(object):
         zVal=valBuildingRangeMin#Used to lay out the buildings in rows
         createdBuildings=0#Counter of buildings finished generating used for the progressWindow to live update with the generation
         self.windowBuildings=[]#An array of buildings with window geometry so the material can be different to non-window buildings
+        self.bevelBuildings=[]#An array of buildings with bevels applied so different faces can be selected for the roof mats
         print("Building Materials",self.materialsWindow.buildingMaterials)
         print("Glass Materials",self.materialsWindow.glassMaterials)
 
