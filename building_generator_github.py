@@ -27,7 +27,7 @@ def addBuildingEffects(self,effect,buildingName):
     elif effect=="scaleTop":#Scale top in
         cmds.select(buildingName+'.e[30:34]')
         cmds.select(buildingName+'.e[25:29]',add=True)
-        cmds.scale(randFloat(0.5,1.5),randFloat(0.5,1.5),1)
+        cmds.scale(randFloat(0.7,1.3),randFloat(0.7,1.3),1)
     
     elif effect=="addTower":#Scale top in
         cmds.select(buildingName+'.e[30:34]')
@@ -44,8 +44,9 @@ def addBuildingEffects(self,effect,buildingName):
         rotateVal=(0,randFloat(5,355),0)#Gets a random val (range is 5-355 so the rotation is always noticable)
         cmds.xform(buildingName,rotation=rotateVal,worldSpace=True,centerPivots=True,absolute=True)#Rotates the building
 
-    elif effect=="applyMaterial":
-        cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(5,5,5) )#Performs an automatic UV on the building
+    elif effect=="applyMaterial":#Effect to add materials from a predetermined list to specific parts of building geometry
+        uvScale=cmds.floatSliderGrp(self.inpUVScale,query=True, value=True)#Gets the scale factor from the slider
+        cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the building
 
         if len(self.materialsWindow.buildingMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
             randomMatBuilding=random.choice(self.materialsWindow.buildingMaterials)
@@ -211,8 +212,9 @@ class BG_Window(object):
         self.inpEffectRotate=cmds.checkBox(label='Rotate building', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectRotateChance))
         self.inpEffectRotateChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
-        self.inpEffectapplyMaterial=cmds.checkBox(label='Auto UV and apply material(s) to buildings',onCommand=self.materialsWindow.createMaterialUI)#Doesn't have a chance input because it will always happen on all buildings if selected
-        
+        self.inpEffectapplyMaterial=cmds.checkBox(label='Auto UV and apply material(s) to buildings',onCommand=lambda x: self.toggleSliderLock(self.inpUVScale))#Doesn't have a chance input because it will always happen on all buildings if selected
+        self.inpUVScale=cmds.floatSliderGrp(field=True, label='UV Scale:', minValue=0.5,maxValue=10, value=5,enable=False)
+
         cmds.separator(style='none')#Resets the layout to one after the other
         cmds.columnLayout(adjustableColumn = True)
 
@@ -221,6 +223,7 @@ class BG_Window(object):
         self.undoBtn = cmds.button( label='Undo Last City', command=self.removeBuildings,width=500)
         self.randomiseBtn = cmds.button( label='Randomize all values', command=self.randomiseValues,width=500)
         self.resetBtn = cmds.button( label='Reset all values to defaults', command=self.resetValues,width=500)
+        self.materialsBtn=cmds.button(label="Open Material Management Window",command=self.materialsWindow.createMaterialUI)
 
 
 
@@ -231,15 +234,28 @@ class BG_Window(object):
 
 
     def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
-        if  cmds.intSliderGrp(slider,query=True,enable=True):#If slider is enabled
-            print("Disabling slider",slider)
-            cmds.intSliderGrp(slider,edit=True,enable=False)#Disable it
-        elif cmds.intSliderGrp(slider,query=True,enable=False):#If slider is disabled
-            cmds.intSliderGrp(slider,edit=True,enable=True)#Enable it
-            print("Enabling slider",slider)
-        else:
-            cmds.intSliderGrp(slider,edit=True,enable=True)#Enable it
-            print("Enabling slider",slider)
+        try:
+            if  cmds.intSliderGrp(slider,query=True,enable=True):#If slider is enabled
+                print("Disabling slider",slider)
+                cmds.intSliderGrp(slider,edit=True,enable=False)#Disable it
+            elif cmds.intSliderGrp(slider,query=True,enable=False):#If slider is disabled
+                cmds.intSliderGrp(slider,edit=True,enable=True)#Enable it
+                print("Enabling slider",slider)
+            else:
+                cmds.intSliderGrp(slider,edit=True,enable=True)#Enable it
+                print("Enabling slider",slider)
+        except RuntimeError:#Errors because its actually looking for a floatSliderGrp
+            if  cmds.floatSliderGrp(slider,query=True,enable=True):#If slider is enabled
+                print("Disabling slider",slider)
+                cmds.floatSliderGrp(slider,edit=True,enable=False)#Disable it
+            elif cmds.floatSliderGrp(slider,query=True,enable=False):#If slider is disabled
+                cmds.floatSliderGrp(slider,edit=True,enable=True)#Enable it
+                print("Enabling slider",slider)
+            else:
+                cmds.floatSliderGrp(slider,edit=True,enable=True)#Enable it
+                print("Enabling slider",slider)
+        #If it actually isn't looking for a float slider group then no worries because it'll still crash
+
 
     def removeBuildings(self, *args):#Removes the last generated city (Whichever name is stored in self.buildinggroup)
         try:
