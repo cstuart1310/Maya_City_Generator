@@ -74,6 +74,22 @@ def addBuildingEffects(self,effect,buildingName):
             cmds.sets(forceElement=randomMatRoof)#Apply a random roof material
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
+    elif effect=="addBalcony":#Adds a balcony(s) to the side of the building
+        for balconyCount in range(1,5):
+            balconyName=(buildingName+"_Balcony_"+str(balconyCount))
+            cmds.polyCube(width=self.buildingWidth/3,height=self.buildingHeight/70,depth=self.buildingDepth/3,name=balconyName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a balcony
+            cmds.polyExtrudeFacet(balconyName+".f[25]",balconyName+".f[35]",balconyName+".f[45]",balconyName+".f[47]",balconyName+".f[49]",balconyName+".f[39]",balconyName+".f[29]",balconyName+".f[27]",kft=False, ltz=2, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces upwards to make a balcony
+            
+            balconyAxis=random.choice(["X","Z"])#Chooses whether to place the balcony on the X or Z axis
+            if balconyAxis=="X":
+                balconyPosition=[self.buildingPosition[0]+(self.buildingWidth/2),randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]]
+            else:
+                balconyPosition=[self.buildingPosition[0],randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]+(self.buildingDepth/2)]
+            cmds.xform(balconyName,translation=balconyPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the balcony to the position based on the chosen axis
+            cmds.parent(balconyName,buildingName)#Parents the balcony to the building (Mostly for organization)
+
+
+
 
 
 #main-------------------------------------------------
@@ -212,6 +228,9 @@ class BG_Window(object):
         self.inpEffectRotate=cmds.checkBox(label='Rotate building', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectRotateChance))
         self.inpEffectRotateChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
+        self.inpEffectAddBalcony=cmds.checkBox(label='Add balconies', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddBalconyChance))
+        self.inpEffectAddBalconyChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
+
         self.inpEffectapplyMaterial=cmds.checkBox(label='Auto UV and apply material(s) to buildings',onCommand=lambda x: self.toggleSliderLock(self.inpUVScale))#Doesn't have a chance input because it will always happen on all buildings if selected
         self.inpUVScale=cmds.floatSliderGrp(field=True, label='UV Scale:', minValue=0.5,maxValue=10, value=5,enable=False)
 
@@ -313,7 +332,10 @@ class BG_Window(object):
         cmds.intSliderGrp(self.inpEffectBevelChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
         cmds.intSliderGrp(self.inpEffectScaleTopChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
         cmds.intSliderGrp(self.inpEffectRotateChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        cmds.intSliderGrp(self.inpEffectAddBalconyChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+
         cmds.optionMenu(self.inpLayoutMode,edit=True,value="Uniform with spacing variation")#Updates the optionMenu with a random choice from the list
+        
 
 
     def genBuildings(self, *args):
@@ -353,6 +375,8 @@ class BG_Window(object):
             effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectapplyMaterial, query=True, value=True):#Queries if check box is checked
             effects.append(["applyMaterial",100])#Adds the effect to the list of effects to use (And a 100% likelihood so all buildings are material-ed)
+        if cmds.checkBox(self.inpEffectAddBalcony, query=True, value=True):#Queries if check box is checked
+            effects.append(["addBalcony",cmds.intSliderGrp(self.inpEffectAddBalconyChance, query=True, value=True)])#Adds the effect to the list of effects to use
 
         #main loop
         self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)
@@ -372,32 +396,32 @@ class BG_Window(object):
             buildingName=(self.buildingGroup+"_Building_"+str(buildingNo))#Names the buildings in the format Building_1
 
             #generates dimensions for the building
-            buildingHeight=randFloat(valBuildingHeightMin,valBuildingHeightMax)
-            buildingWidth=randFloat(valBuildingWidthMin,valBuildingWidthMax)
-            buildingDepth=randFloat(valBuildingDepthMin,valBuildingDepthMax)
+            self.buildingHeight=randFloat(valBuildingHeightMin,valBuildingHeightMax)
+            self.buildingWidth=randFloat(valBuildingWidthMin,valBuildingWidthMax)
+            self.buildingDepth=randFloat(valBuildingDepthMin,valBuildingDepthMax)
 
-            cmds.polyCube(width=buildingWidth,height=buildingHeight,depth=buildingDepth,name=buildingName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a building
+            cmds.polyCube(width=self.buildingWidth,height=self.buildingHeight,depth=self.buildingDepth,name=buildingName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a building
 
 
             #Generates the position for the building to be placed (Spawns at 0,0 by default)
             if layoutMode=="Random":#Randomly places buildings (May cause collisions)
-                buildingPosition=[randFloat(valBuildingRangeMin,valBuildingRangeMax),buildingHeight/2,randFloat(valBuildingRangeMin,valBuildingRangeMax)] #Divs height by 2 because buildings are placed at 0 so half clips below
+                self.buildingPosition=[randFloat(valBuildingRangeMin,valBuildingRangeMax),self.buildingHeight/2,randFloat(valBuildingRangeMin,valBuildingRangeMax)] #Divs height by 2 because buildings are placed at 0 so half clips below
             
             elif layoutMode=="Uniform":#Places buildings in a grid format with set spacing
-                buildingPosition=[prevPosition,buildingHeight/2,zVal]
-                prevPosition=prevPosition+(buildingWidth*2)
+                self.buildingPosition=[prevPosition,self.buildingHeight/2,zVal]
+                prevPosition=prevPosition+(self.buildingWidth*2)
                 if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
                     prevPosition=valBuildingRangeMin#Resets the building to the left side
-                    zVal=zVal+buildingDepth*3 #Starts placing buildings on the next row
+                    zVal=zVal+self.buildingDepth*3 #Starts placing buildings on the next row
             
             elif layoutMode=="Uniform with spacing variation":#Places buildings in a grid format with random (within range) spacing
-                buildingPosition=[prevPosition,buildingHeight/randFloat(1.5,2.5),zVal]
-                prevPosition=prevPosition+(buildingWidth*randFloat(1.3,3.5))
+                self.buildingPosition=[prevPosition,self.buildingHeight/randFloat(1.5,2.5),zVal]
+                prevPosition=prevPosition+(self.buildingWidth*randFloat(1.3,3.5))
                 if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
                     prevPosition=valBuildingRangeMin#Resets the building to the left side
-                    zVal=zVal+buildingDepth*randFloat(2,3.5) #Starts placing buildings on the next row            
+                    zVal=zVal+self.buildingDepth*randFloat(2,3.5) #Starts placing buildings on the next row            
             try:
-                cmds.xform(buildingName,translation=buildingPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the building to the generated position
+                cmds.xform(buildingName,translation=self.buildingPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the building to the generated position
             except ValueError as e:
                 print(e)
                 cmds.confirmDialog(title="Error!",message=("A building named "+buildingName+" already exists, generation stopped. Choose a new group name and retry."))
