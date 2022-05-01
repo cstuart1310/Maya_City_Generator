@@ -17,12 +17,12 @@ def randInteger(min,max):
     return random.randint(min,max)
 
 #Applies effects from the list to the currently selected building
+
 def addBuildingEffects(self,effect,buildingName):
     print("Applying",effect,"to",buildingName)
     if effect=="addWindows":#Adds windows
         cmds.polyExtrudeFacet(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]',kft=False, ltz=-.75, ls=(.5, .8, 0),smoothingAngle=45)
         self.windowBuildings.append(buildingName)#USed for the texture effect so it knows which buildings to add different glass mats to
-        print("Window Buildings",self.windowBuildings)
 
     elif effect=="scaleTop":#Scale top in
         cmds.select(buildingName+'.e[30:34]')
@@ -38,24 +38,98 @@ def addBuildingEffects(self,effect,buildingName):
         cmds.xform(buildingName,rotation=rotateVal,worldSpace=True,centerPivots=True,absolute=True)#Rotates the building
 
     elif effect=="applyMaterial":
-        print("Applying material to",buildingName)
-        cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(3,3,3) )#Performs an automatic UV on the building
-        
-        materials=cmds.ls(type='shadingEngine')
-        cmds.sets(forceElement=random.choice(materials))#Assigns a random material from the array to the selected object (A building)
+        cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(5,5,5) )#Performs an automatic UV on the building
 
-        if buildingName in self.windowBuildings:#If the selected buildings has had the addWindows effect applied
+        if len(self.materialsWindow.buildingMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
+            randomMatBuilding=random.choice(self.materialsWindow.buildingMaterials)
+            print("Assigning ",randomMatBuilding,"as the glass mat for",buildingName)
+            cmds.sets(forceElement=randomMatBuilding)#Assigns a random material from the array to the selected object (A building)
+
+        if buildingName in self.windowBuildings and len(self.materialsWindow.glassMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes
+            randomMatGlass=random.choice(self.materialsWindow.glassMaterials)
+            print("Assigning ",randomMatGlass,"as the glass mat for",buildingName)
             cmds.select(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]')#Select the faces of the windows
-            cmds.sets(forceElement="aiStandardSurface5SG")#Apply the glass material
+            cmds.sets(forceElement=randomMatGlass)#Apply a random glass material
+            cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
-            
 
 
 #main-------------------------------------------------
+class material_Window(object):#Class for the wiondows to do with the material selections
+
+    def addMaterial(self,window,matList,TSList,*args):#Function used to add new materials to the given list
+        print(self,window,matList,TSList)
+        newMatList=matList+(cmds.textScrollList(self.sceneMaterialsTS, query=True, si=True))#Concats the original list and the user's selections into one list
+        cmds.textScrollList(TSList,edit=True,append=newMatList)#Removes all items then appends the new array (Helps prevent duplicates)
+
+        #Updates the global lists so the main class can access it
+        
+        if cmds.textScrollList(self.buildingMaterialsTSList, query=True, allItems=True) != None:#Checks if the list returns NONE becaise it's empty (This breaks everything and has annoyed me for about a day)
+            self.buildingMaterials=cmds.textScrollList(self.buildingMaterialsTSList, query=True, allItems=True)
+        
+        if cmds.textScrollList(self.glassMaterialsTSList, query=True, allItems=True) != None:
+            self.glassMaterials=cmds.textScrollList(self.glassMaterialsTSList, query=True, allItems=True)
+        
+        
+        print("Building Materials",self.buildingMaterials)
+        print("Glass Materials",self.glassMaterials)
+
+
+    def clearMaterialList(self,window,TSList,matList,*args):
+        print("Clearing ",TSList)
+        cmds.textScrollList(TSList,edit=True,removeAll=True)
+        matList=matList.clear()
+
+    def __init__(self,*args):
+        self.buildingMaterials=[]
+        self.glassMaterials=[]
+        self.roofMaterials=[]
+
+    def createMaterialUI(self,*args):
+        self.buildingMaterials=[]
+        self.glassMaterials=[]
+        self.roofMaterials=[]
+
+
+        self.window="Material List"
+        self.title = "Material List"
+        self.size = (1500, 800)
+
+        self.materialListWindow=cmds.window(title='Materials List', width=200)
+
+        cmds.columnLayout(rowSpacing=10, columnWidth=200)
+        cmds.text("Scene Materials")
+        sceneMaterialsList = cmds.ls(set=True)#Gets all materials (sets) in the scene
+        self.sceneMaterialsTS=cmds.textScrollList(append=sceneMaterialsList,allowMultiSelection=True) #Shows all materials in the scene as a textScrollList
+        
+        cmds.rowColumnLayout(numberOfRows=4)#Changes to a 2 column layout for side-by-side buttons
+        cmds.text( label='Building Materials' )#Title for this section
+        self.buildingMaterialsTSList=cmds.textScrollList('Building Materials', append=self.buildingMaterials) 
+        buildingMaterialsAppendButton=cmds.button( label='Add to Building Material list', command=lambda x: self.addMaterial(self,self.buildingMaterials,self.buildingMaterialsTSList))#Button to add selections to the list
+        buildingMaterialsClearButton=cmds.button("Clear Building Material list",command=lambda x:self.clearMaterialList(self,self.buildingMaterialsTSList,self.buildingMaterials))#Removes all items then appends the new array (Helps prevent duplicates))#Button to clear the list
+      
+
+        cmds.text( label='Glass Materials' )#Title for this section
+        self.glassMaterialsTSList=cmds.textScrollList('Glass Materials', append=self.glassMaterials) 
+        glassMaterialsAppendButton=cmds.button( label='Add to Glass Materials list', command=lambda x: self.addMaterial(self,self.glassMaterials,self.glassMaterialsTSList))#Button to add selections to the list
+        glassMaterialsClearButton=cmds.button("Clear Glass Materials list",command=lambda x:self.clearMaterialList(self,self.glassMaterialsTSList,self.glassMaterials))#Removes all items then appends the new array (Helps prevent duplicates))#Button to clear the list
+ 
+        
+        cmds.separator()
+        cmds.rowColumnLayout(numberOfRows=1)#Changes to a 2 column layout for side-by-side buttons
+ 
+        cmds.showWindow()
+
+
+
+        
+
 
 #Menu Setup
 class BG_Window(object):
     def __init__(self):
+        self.materialsWindow=material_Window(self)#Initiates the material window (Doesnt load UI yet, done later on)
+
         #Window
         self.window = "BG_Window"
         self.title = ("City Generator")
@@ -106,8 +180,8 @@ class BG_Window(object):
         self.inpEffectRotate=cmds.checkBox(label='Rotate building', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectRotateChance))
         self.inpEffectRotateChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
-        self.inpEffectapplyMaterial=cmds.checkBox(label='Apply material(s) to buildings')#Doesn't have a chance input because it will always happen on all buildings if selected
-
+        self.inpEffectapplyMaterial=cmds.checkBox(label='Auto UV and apply material(s) to buildings',onCommand=self.materialsWindow.createMaterialUI)#Doesn't have a chance input because it will always happen on all buildings if selected
+        
         cmds.separator(style='none')#Resets the layout to one after the other
         cmds.columnLayout(adjustableColumn = True)
 
@@ -120,6 +194,10 @@ class BG_Window(object):
 
 
         cmds.showWindow()
+
+
+
+
 
     def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
         if  cmds.intSliderGrp(slider,query=True,enable=True):#If slider is enabled
@@ -210,6 +288,8 @@ class BG_Window(object):
         zVal=valBuildingRangeMin#Used to lay out the buildings in rows
         createdBuildings=0#Counter of buildings finished generating used for the progressWindow to live update with the generation
         self.windowBuildings=[]#An array of buildings with window geometry so the material can be different to non-window buildings
+        print("Building Materials",self.materialsWindow.buildingMaterials)
+        print("Glass Materials",self.materialsWindow.glassMaterials)
 
 
         effects=[]#Clears effects on each re-run
@@ -232,7 +312,6 @@ class BG_Window(object):
             cmds.confirmDialog(title="Warning!",message=("A group named "+self.buildingGroup+" already exists, generated buildings will be placed into it"))
         else:
             cmds.group(empty=True, name=self.buildingGroup)#Creates the group that the buildings will be placed into
-        #cmds.polyPlane(width=valBuildingRangeMax*2,height=valBuildingRangeMax*2,name="Ground Plane") #creates ground plane
         
         print("Layout Mode:",layoutMode)
         cmds.progressWindow(endProgress=1)#Removes any existing progress windows from past runs
@@ -286,6 +365,7 @@ class BG_Window(object):
                     addBuildingEffects(self,effect,buildingName)#Apply the effect
             cmds.parent(buildingName,self.buildingGroup)
             createdBuildings+=1 #increments the counter for the status bar by 1
+            print("\n")
             
         cmds.progressWindow(self.progressWindow,endProgress=1)
 
