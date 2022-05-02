@@ -44,15 +44,37 @@ def addBuildingEffects(self,effect,buildingName):
         rotateVal=(0,randFloat(5,355),0)#Gets a random val (range is 5-355 so the rotation is always noticable)
         cmds.xform(buildingName,rotation=rotateVal,worldSpace=True,centerPivots=True,absolute=True)#Rotates the building
 
-    elif effect=="applyMaterial":#Effect to add materials from a predetermined list to specific parts of building geometry
+
+
+    elif effect=="addBalcony":#Adds a balcony(s) to the side of the building
+        for balconyCount in range(1,15):
+            balconyName=(buildingName+"_Balcony_"+str(balconyCount))
+            cmds.polyCube(width=self.buildingWidth/5,height=self.buildingHeight/75,depth=self.buildingDepth/3,name=balconyName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a balcony
+            cmds.polyExtrudeFacet(balconyName+".f[25]",balconyName+".f[35]",balconyName+".f[45]",balconyName+".f[47]",balconyName+".f[49]",balconyName+".f[39]",balconyName+".f[29]",balconyName+".f[27]",kft=False, ltz=1.5, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces upwards to make a balcony
+            
+            balconyAxis=random.choice(["X","Z"])#Chooses whether to place the balcony on the X or Z axis
+            if balconyAxis=="X":
+                balconyPosition=[self.buildingPosition[0]+(self.buildingWidth/2),randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]]
+            else:
+                balconyPosition=[self.buildingPosition[0],randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]+(self.buildingDepth/2)]
+            cmds.xform(balconyName,translation=balconyPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the balcony to the position based on the chosen axis
+            cmds.parent(balconyName,buildingName)#Parents the balcony to the building (Mostly for organization)
+        self.balconyBuildings.append(buildingName)
+
+
+    elif effect=="applyMaterial":#Effect to add materials from a predetermined list to specific parts of building geometry. Has to be last so all geometry is there
         uvScale=cmds.floatSliderGrp(self.inpUVScale,query=True, value=True)#Gets the scale factor from the slider
         cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the building
 
+
+        #Assigns main building textures
         if len(self.materialsWindow.buildingMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
             randomMatBuilding=random.choice(self.materialsWindow.buildingMaterials)
             print("Assigning ",randomMatBuilding,"as the glass mat for",buildingName)
             cmds.sets(forceElement=randomMatBuilding)#Assigns a random material from the array to the selected object (A building)
 
+
+        #Assigns window textures
         if buildingName in self.windowBuildings and len(self.materialsWindow.glassMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes
             randomMatGlass=random.choice(self.materialsWindow.glassMaterials)
             print("Assigning ",randomMatGlass,"as the glass mat for",buildingName)
@@ -60,6 +82,7 @@ def addBuildingEffects(self,effect,buildingName):
             cmds.sets(forceElement=randomMatGlass)#Apply a random glass material
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
+        #Assigns roof textures
         if len(self.materialsWindow.roofMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
             randomMatRoof=random.choice(self.materialsWindow.roofMaterials)
             print("Assigning ",randomMatRoof,"as the roof mat for",buildingName)
@@ -74,19 +97,17 @@ def addBuildingEffects(self,effect,buildingName):
             cmds.sets(forceElement=randomMatRoof)#Apply a random roof material
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
-    elif effect=="addBalcony":#Adds a balcony(s) to the side of the building
-        for balconyCount in range(1,5):
-            balconyName=(buildingName+"_Balcony_"+str(balconyCount))
-            cmds.polyCube(width=self.buildingWidth/3,height=self.buildingHeight/70,depth=self.buildingDepth/3,name=balconyName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a balcony
-            cmds.polyExtrudeFacet(balconyName+".f[25]",balconyName+".f[35]",balconyName+".f[45]",balconyName+".f[47]",balconyName+".f[49]",balconyName+".f[39]",balconyName+".f[29]",balconyName+".f[27]",kft=False, ltz=2, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces upwards to make a balcony
-            
-            balconyAxis=random.choice(["X","Z"])#Chooses whether to place the balcony on the X or Z axis
-            if balconyAxis=="X":
-                balconyPosition=[self.buildingPosition[0]+(self.buildingWidth/2),randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]]
-            else:
-                balconyPosition=[self.buildingPosition[0],randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]+(self.buildingDepth/2)]
-            cmds.xform(balconyName,translation=balconyPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the balcony to the position based on the chosen axis
-            cmds.parent(balconyName,buildingName)#Parents the balcony to the building (Mostly for organization)
+        #Assigns balcony textures
+        if buildingName in self.balconyBuildings:#Checks to make sure there's something in the list else the random lib crashes
+            print("Building has balconies")
+            for balconyName in cmds.ls(objectsOnly=True):#Loops through all objects in the scene
+                if buildingName in balconyName and "Balcony" in balconyName:
+                    print("Balcony Name",balconyName)
+                    cmds.polyAutoProjection(balconyName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
+                    cmds.select(balconyName)#Selects the balcony by its name
+                    cmds.sets(forceElement=randomMatBuilding)#Apply the same texture to the balcony as the main building
+                    cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
+
 
 
 
@@ -100,8 +121,7 @@ class material_Window(object):#Class for the wiondows to do with the material se
         newMatList=matList+(cmds.textScrollList(self.sceneMaterialsTS, query=True, si=True))#Concats the original list and the user's selections into one list
         cmds.textScrollList(TSList,edit=True,append=newMatList)#Removes all items then appends the new array (Helps prevent duplicates)
 
-        #Updates the global lists so the main class can access it
-        
+        #Updates the lists so the main class can access them
         if cmds.textScrollList(self.buildingMaterialsTSList, query=True, allItems=True) != None:#Checks if the list returns NONE becaise it's empty (This breaks everything and has annoyed me for about a day)
             self.buildingMaterials=cmds.textScrollList(self.buildingMaterialsTSList, query=True, allItems=True)
         
@@ -110,7 +130,7 @@ class material_Window(object):#Class for the wiondows to do with the material se
 
         if cmds.textScrollList(self.roofMaterialsTSList, query=True, allItems=True) != None:
             self.roofMaterials=cmds.textScrollList(self.roofMaterialsTSList, query=True, allItems=True)
-        
+
         
         print("Building Materials",self.buildingMaterials)
         print("Glass Materials",self.glassMaterials)
@@ -127,10 +147,12 @@ class material_Window(object):#Class for the wiondows to do with the material se
         self.glassMaterials=[]
         self.roofMaterials=[]
 
+
     def createMaterialUI(self,*args):
         self.buildingMaterials=[]
         self.glassMaterials=[]
         self.roofMaterials=[]
+
 
 
         self.window="Material List"
@@ -358,6 +380,7 @@ class BG_Window(object):
         createdBuildings=0#Counter of buildings finished generating used for the progressWindow to live update with the generation
         self.windowBuildings=[]#An array of buildings with window geometry so the material can be different to non-window buildings
         self.bevelBuildings=[]#An array of buildings with bevels applied so different faces can be selected for the roof mats
+        self.balconyBuildings=[]#An array of buildings with balconies applied (Need to be UV'd and textured seperately)
         print("Building Materials",self.materialsWindow.buildingMaterials)
         print("Glass Materials",self.materialsWindow.glassMaterials)
 
