@@ -41,8 +41,10 @@ def addBuildingEffects(self,effect,buildingName):
 
         
     elif effect=="rotate":#Rotates the building along the Y axis only
+        cmds.select(buildingName,hierarchy=True)#Selects the building AND children (Else children aren't rotated)
         rotateVal=(0,randFloat(5,355),0)#Gets a random val (range is 5-355 so the rotation is always noticable)
         cmds.xform(buildingName,rotation=rotateVal,worldSpace=True,centerPivots=True,absolute=True)#Rotates the building
+        
 
 
 
@@ -53,10 +55,10 @@ def addBuildingEffects(self,effect,buildingName):
         for edge in midEdges:#Loops through each of the edges that dont touch the ground or the top of the building            
             balconyYpositions.append(cmds.xform(buildingName+".e["+str(edge)+"]",query=True,worldSpace=True,translation=True)[1])#Adds the Y coordinate of the edge to be used as a possible Y coord for the balcony
 
-        
-        for balconyCount in range(1,16):
+        noBalconies=randInteger(1,16)#Randomly picks a number of balconies to add
+        for balconyCount in range(0,noBalconies):
             balconyName=(buildingName+"_Balcony_"+str(balconyCount))
-            cmds.polyCube(width=self.buildingWidth/3,height=self.buildingHeight/75,depth=self.buildingDepth/3,name=balconyName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a balcony
+            cmds.polyCube(width=self.buildingWidth/3,height=self.buildingHeight/100,depth=self.buildingDepth/3,name=balconyName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a balcony
             
             cmds.polyExtrudeFacet(balconyName+".f[25]",balconyName+".f[35]",balconyName+".f[45]",balconyName+".f[47]",balconyName+".f[49]",balconyName+".f[39]",balconyName+".f[29]",balconyName+".f[27]",kft=False, ltz=1.5, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces upwards to make a balcony
             balconyAxis=random.choice(["X+","Z+","X-","Z-"])#Chooses whether to place the balcony on the X or Z axis
@@ -406,10 +408,10 @@ class BG_Window(object):
             effects.append(["addWindows",cmds.intSliderGrp(self.inpEffectAddWindowsChance, query=True, value=True)])#Adds the effect and its % chance of being applied to an array
         if cmds.checkBox(self.inpEffectBevel, query=True, value=True):#Queries if check box is checked
             effects.append(["bevel",cmds.intSliderGrp(self.inpEffectBevelChance, query=True, value=True)])#Adds the effect to the list of effects to use
+        if cmds.checkBox(self.inpEffectAddBalcony, query=True, value=True):#Queries if check box is checked 
+            effects.append(["addBalcony",cmds.intSliderGrp(self.inpEffectAddBalconyChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectRotate, query=True, value=True):#Queries if check box is checked
             effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
-        if cmds.checkBox(self.inpEffectAddBalcony, query=True, value=True):#Queries if check box is checked
-            effects.append(["addBalcony",cmds.intSliderGrp(self.inpEffectAddBalconyChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectapplyMaterial, query=True, value=True):#Queries if check box is checked. addMaterial must be last so all geometry exists to texture
             effects.append(["applyMaterial",100])#Adds the effect to the list of effects to use (And a 100% likelihood so all buildings are material-ed)
 
