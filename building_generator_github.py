@@ -54,7 +54,7 @@ def addBuildingEffects(self,effect,buildingName):
             balconyYpositions.append(cmds.xform(buildingName+".e["+str(edge)+"]",query=True,worldSpace=True,translation=True)[1])#Adds the Y coordinate of the edge to be used as a possible Y coord for the balcony
 
         
-        for balconyCount in range(1,15):
+        for balconyCount in range(1,16):
             balconyName=(buildingName+"_Balcony_"+str(balconyCount))
             cmds.polyCube(width=self.buildingWidth/3,height=self.buildingHeight/75,depth=self.buildingDepth/3,name=balconyName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a balcony
             
