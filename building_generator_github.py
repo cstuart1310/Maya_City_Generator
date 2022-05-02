@@ -47,21 +47,27 @@ def addBuildingEffects(self,effect,buildingName):
 
 
     elif effect=="addBalcony":#Adds a balcony(s) to the side of the building
+        midEdges=[5,10,15,20]
+        balconyYpositions=[]
+
+        for edge in midEdges:#Loops through each of the edges that dont touch the ground or the top of the building            
+            balconyYpositions.append(cmds.xform(buildingName+".e["+str(edge)+"]",query=True,worldSpace=True,translation=True)[1])#Adds the Y coordinate of the edge to be used as a possible Y coord for the balcony
+
+        
         for balconyCount in range(1,15):
             balconyName=(buildingName+"_Balcony_"+str(balconyCount))
-            cmds.polyCube(width=self.buildingWidth/5,height=self.buildingHeight/75,depth=self.buildingDepth/3,name=balconyName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a balcony
+            cmds.polyCube(width=self.buildingWidth/3,height=self.buildingHeight/75,depth=self.buildingDepth/3,name=balconyName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a balcony
             
             cmds.polyExtrudeFacet(balconyName+".f[25]",balconyName+".f[35]",balconyName+".f[45]",balconyName+".f[47]",balconyName+".f[49]",balconyName+".f[39]",balconyName+".f[29]",balconyName+".f[27]",kft=False, ltz=1.5, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces upwards to make a balcony
-            
             balconyAxis=random.choice(["X+","Z+","X-","Z-"])#Chooses whether to place the balcony on the X or Z axis
             if balconyAxis=="X+":
-                balconyPosition=[self.buildingPosition[0]+(self.buildingWidth/2),randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]]
+                balconyPosition=[self.buildingPosition[0]+(self.buildingWidth/2),random.choice(balconyYpositions),self.buildingPosition[2]]
             elif balconyAxis=="Z+":
-                balconyPosition=[self.buildingPosition[0],randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]+(self.buildingDepth/2)]
+                balconyPosition=[self.buildingPosition[0],random.choice(balconyYpositions),self.buildingPosition[2]+(self.buildingDepth/2)]
             elif balconyAxis=="X-":
-                balconyPosition=[self.buildingPosition[0]-(self.buildingWidth/2),randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]]
+                balconyPosition=[self.buildingPosition[0]-(self.buildingWidth/2),random.choice(balconyYpositions),self.buildingPosition[2]]
             elif balconyAxis=="Z-":
-                balconyPosition=[self.buildingPosition[0],randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]-(self.buildingDepth/2)]
+                balconyPosition=[self.buildingPosition[0],random.choice(balconyYpositions),self.buildingPosition[2]-(self.buildingDepth/2)]
            
             cmds.xform(balconyName,translation=balconyPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the balcony to the position based on the chosen axis
             cmds.parent(balconyName,buildingName)#Parents the balcony to the building (Mostly for organization)
@@ -95,7 +101,7 @@ def addBuildingEffects(self,effect,buildingName):
             
             if buildingName in self.bevelBuildings and buildingName in self.windowBuildings:
                 cmds.select(buildingName+'.f[537:541]',buildingName+'.f[25:44]')#Select the faces of the roof (When beveled and windows added)
-            if buildingName in self.bevelBuildings and buildingName not in self.windowBuildings:
+            elif buildingName in self.bevelBuildings and buildingName not in self.windowBuildings:
                 cmds.select(buildingName+'.f[150:154]',buildingName+'.f[20:39]')#Select the faces of the roof (When beveled)                
             else:
                 cmds.select(buildingName+'.f[25:49]')#Select the faces of the roof (When flat)
@@ -106,7 +112,6 @@ def addBuildingEffects(self,effect,buildingName):
         #Assigns balcony textures
         print("Balcony Buildings",self.balconyBuildings)
         if buildingName in self.balconyBuildings:#Checks to make sure there's something in the list else the random lib crashes
-            print("Building has balconies")
             for balconyName in cmds.ls(objectsOnly=True):#Loops through all objects in the scene
                 if buildingName in balconyName and "Balcony" in balconyName:
                     print("Balcony Name",balconyName)
