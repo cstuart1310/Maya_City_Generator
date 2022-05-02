@@ -50,16 +50,22 @@ def addBuildingEffects(self,effect,buildingName):
         for balconyCount in range(1,15):
             balconyName=(buildingName+"_Balcony_"+str(balconyCount))
             cmds.polyCube(width=self.buildingWidth/5,height=self.buildingHeight/75,depth=self.buildingDepth/3,name=balconyName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a balcony
+            
             cmds.polyExtrudeFacet(balconyName+".f[25]",balconyName+".f[35]",balconyName+".f[45]",balconyName+".f[47]",balconyName+".f[49]",balconyName+".f[39]",balconyName+".f[29]",balconyName+".f[27]",kft=False, ltz=1.5, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces upwards to make a balcony
             
-            balconyAxis=random.choice(["X","Z"])#Chooses whether to place the balcony on the X or Z axis
-            if balconyAxis=="X":
+            balconyAxis=random.choice(["X+","Z+","X-","Z-"])#Chooses whether to place the balcony on the X or Z axis
+            if balconyAxis=="X+":
                 balconyPosition=[self.buildingPosition[0]+(self.buildingWidth/2),randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]]
-            else:
+            elif balconyAxis=="Z+":
                 balconyPosition=[self.buildingPosition[0],randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]+(self.buildingDepth/2)]
+            elif balconyAxis=="X-":
+                balconyPosition=[self.buildingPosition[0]-(self.buildingWidth/2),randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]]
+            elif balconyAxis=="Z-":
+                balconyPosition=[self.buildingPosition[0],randFloat(5,self.buildingHeight*0.75),self.buildingPosition[2]-(self.buildingDepth/2)]
+           
             cmds.xform(balconyName,translation=balconyPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the balcony to the position based on the chosen axis
             cmds.parent(balconyName,buildingName)#Parents the balcony to the building (Mostly for organization)
-        self.balconyBuildings.append(buildingName)
+        self.balconyBuildings.append(buildingName)#Adds the building into a list used for handling textures
 
 
     elif effect=="applyMaterial":#Effect to add materials from a predetermined list to specific parts of building geometry. Has to be last so all geometry is there
@@ -98,6 +104,7 @@ def addBuildingEffects(self,effect,buildingName):
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
         #Assigns balcony textures
+        print("Balcony Buildings",self.balconyBuildings)
         if buildingName in self.balconyBuildings:#Checks to make sure there's something in the list else the random lib crashes
             print("Building has balconies")
             for balconyName in cmds.ls(objectsOnly=True):#Loops through all objects in the scene
@@ -396,10 +403,11 @@ class BG_Window(object):
             effects.append(["bevel",cmds.intSliderGrp(self.inpEffectBevelChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectRotate, query=True, value=True):#Queries if check box is checked
             effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
-        if cmds.checkBox(self.inpEffectapplyMaterial, query=True, value=True):#Queries if check box is checked
-            effects.append(["applyMaterial",100])#Adds the effect to the list of effects to use (And a 100% likelihood so all buildings are material-ed)
         if cmds.checkBox(self.inpEffectAddBalcony, query=True, value=True):#Queries if check box is checked
             effects.append(["addBalcony",cmds.intSliderGrp(self.inpEffectAddBalconyChance, query=True, value=True)])#Adds the effect to the list of effects to use
+        if cmds.checkBox(self.inpEffectapplyMaterial, query=True, value=True):#Queries if check box is checked. addMaterial must be last so all geometry exists to texture
+            effects.append(["applyMaterial",100])#Adds the effect to the list of effects to use (And a 100% likelihood so all buildings are material-ed)
+
 
         #main loop
         self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)
