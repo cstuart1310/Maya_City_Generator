@@ -80,6 +80,7 @@ def addBuildingEffects(self,effect,buildingName):
         uvScale=cmds.floatSliderGrp(self.inpUVScale,query=True, value=True)#Gets the scale factor from the slider
         cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the building
 
+        
 
         #Assigns main building textures
         if len(self.materialsWindow.buildingMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
@@ -87,12 +88,28 @@ def addBuildingEffects(self,effect,buildingName):
             print("Assigning ",randomMatBuilding,"as the glass mat for",buildingName)
             cmds.sets(forceElement=randomMatBuilding)#Assigns a random material from the array to the selected object (A building)
 
+            #Assigns balcony textures (Only after assigning main building texture to ensure all conditions to texture are met)
+            print("Balcony Buildings",self.balconyBuildings)
+            if buildingName in self.balconyBuildings:#Checks to make sure there's something in the list else the random lib crashes
+                for balconyName in cmds.ls(objectsOnly=True):#Loops through all objects in the scene
+                    if buildingName in balconyName and "Balcony" in balconyName:
+                        print("Balcony Name",balconyName)
+                        cmds.polyAutoProjection(balconyName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
+                        cmds.select(balconyName)#Selects the balcony by its name
+                        cmds.sets(forceElement=randomMatBuilding)#Apply the same texture to the balcony as the main building
+                        cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
+
+
 
         #Assigns window textures
         if buildingName in self.windowBuildings and len(self.materialsWindow.glassMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes
             randomMatGlass=random.choice(self.materialsWindow.glassMaterials)
             print("Assigning ",randomMatGlass,"as the glass mat for",buildingName)
-            cmds.select(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]')#Select the faces of the windows
+
+            if buildingName in self.bevelBuildings and buildingName in self.windowBuildings:
+                cmds.select(buildingName+'.f[45:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]')#Selects different faces if the building is also beveled
+            else:
+                cmds.select(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]')#Select the faces of the windows
             cmds.sets(forceElement=randomMatGlass)#Apply a random glass material
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
@@ -111,16 +128,7 @@ def addBuildingEffects(self,effect,buildingName):
             cmds.sets(forceElement=randomMatRoof)#Apply a random roof material
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
-        #Assigns balcony textures
-        print("Balcony Buildings",self.balconyBuildings)
-        if buildingName in self.balconyBuildings:#Checks to make sure there's something in the list else the random lib crashes
-            for balconyName in cmds.ls(objectsOnly=True):#Loops through all objects in the scene
-                if buildingName in balconyName and "Balcony" in balconyName:
-                    print("Balcony Name",balconyName)
-                    cmds.polyAutoProjection(balconyName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
-                    cmds.select(balconyName)#Selects the balcony by its name
-                    cmds.sets(forceElement=randomMatBuilding)#Apply the same texture to the balcony as the main building
-                    cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
+
 
 
 
@@ -181,7 +189,7 @@ class material_Window(object):#Class for the wiondows to do with the material se
         self.sceneMaterialsTS=cmds.textScrollList(append=sceneMaterialsList,allowMultiSelection=True) #Shows all materials in the scene as a textScrollList
         
         cmds.rowColumnLayout(numberOfRows=4)#Changes to a 2 column layout for side-by-side buttons
-        cmds.text( label='Building Materials' )#Title for this section
+        cmds.text( label='Building Materials')#Title for this section
         self.buildingMaterialsTSList=cmds.textScrollList('Building Materials', append=self.buildingMaterials) 
         buildingMaterialsAppendButton=cmds.button( label='Add to Building Material list', command=lambda x: self.addMaterial(self,self.buildingMaterials,self.buildingMaterialsTSList))#Button to add selections to the list
         buildingMaterialsClearButton=cmds.button("Clear Building Material list",command=lambda x:self.clearMaterialList(self,self.buildingMaterialsTSList,self.buildingMaterials))#Removes all items then appends the new array (Helps prevent duplicates))#Button to clear the list
