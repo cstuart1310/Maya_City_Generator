@@ -321,11 +321,12 @@ class BG_Window(object):
 
 
     def removeBuildings(self, *args):#Removes the last generated city (Whichever name is stored in self.buildinggroup)
-        try:
+        self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)#Updates the buildingGroup name
+        if cmds.objExists(self.buildingGroup):
             cmds.delete(self.buildingGroup) #Deletes the buildings group
-            cmds.delete("Ground_Plane") #Deletes the ground plane
-        except ValueError:#Catches in case the user has deleted one or more of these elements
-            pass#Does nothing but an except needs to do "something" so this is here
+        else:
+            cmds.confirmDialog(title="Error!",message=("A group named "+self.buildingGroup+" does not exist. No objects have been deleted."))
+
 
     def useEffect(self,effectChance):#Returns true or false on whether or not to apply an effect based on its' inputted likelyhood
         useVal=randInteger(1,100)#Produces a random value between 1 and 100
@@ -461,7 +462,7 @@ class BG_Window(object):
                     zVal=zVal+self.buildingDepth*3 #Starts placing buildings on the next row
             
             elif layoutMode=="Uniform with spacing variation":#Places buildings in a grid format with random (within range) spacing
-                self.buildingPosition=[prevPosition,self.buildingHeight/randFloat(1.5,2.5),zVal]
+                self.buildingPosition=[prevPosition,self.buildingHeight/2,zVal]
                 prevPosition=prevPosition+(self.buildingWidth*randFloat(1.3,3.5))
                 if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
                     prevPosition=valBuildingRangeMin#Resets the building to the left side
