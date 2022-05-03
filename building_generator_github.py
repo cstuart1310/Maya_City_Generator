@@ -165,17 +165,13 @@ class material_Window(object):#Class for the wiondows to do with the material se
         matList=matList.clear()
 
     def __init__(self,*args):
+        #Creates the objects lists (Done in the init so they don't reset when the UI is re-opened)
         self.buildingMaterials=[]
         self.glassMaterials=[]
         self.roofMaterials=[]
 
 
-    def createMaterialUI(self,*args):
-        self.buildingMaterials=[]
-        self.glassMaterials=[]
-        self.roofMaterials=[]
-
-
+    def createMaterialUI(self,*args):#Creates and opens the window (Not in init so can be called seperately to creating the object)
 
         self.window="Material List"
         self.title = "Material List"
