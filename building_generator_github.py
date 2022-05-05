@@ -274,8 +274,8 @@ class BG_Window(object):
         self.inpEffectapplyMaterial=cmds.checkBox(label='Auto UV and apply material(s) to buildings',onCommand=lambda x: self.toggleSliderLock(self.inpUVScale))#Doesn't have a chance input because it will always happen on all buildings if selected
         self.inpUVScale=cmds.floatSliderGrp(field=True, label='UV Scale:', minValue=0.5,maxValue=10, value=5,enable=False)
 
-        cmds.separator(style='none')#Resets the layout to one after the other
         cmds.columnLayout(adjustableColumn = True)
+        cmds.rowColumnLayout(numberOfRows=2)#Changes to a 2 column layout for side-by-side buttons
 
         #Gen button
         self.buildBtn = cmds.button( label='Create Buildings', command=self.genBuildings,width=500)
