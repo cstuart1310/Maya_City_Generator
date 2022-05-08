@@ -157,10 +157,11 @@ def addBuildingEffects(self,effect,buildingName):
 #main-------------------------------------------------
 class material_Window(object):#Class for the wiondows to do with the material selections
 
-    def addMaterial(self,window,matList,TSList,*args):#Function used to add new materials to the given list
+    def addMaterial(self,window,matList,TSList,*args):#Function used to add new materials to the given list (And updates all global material lists)
         print(self,window,matList,TSList)
         newMatList=matList+(cmds.textScrollList(self.sceneMaterialsTS, query=True, si=True))#Concats the original list and the user's selections into one list
-        cmds.textScrollList(TSList,edit=True,append=newMatList)#Removes all items then appends the new array (Helps prevent duplicates)
+        newMatList=list(dict.fromkeys(newMatList))#Converts the material list into a dictionary and back to remove duplicates
+        cmds.textScrollList(TSList,edit=True,removeAll=True,append=newMatList)#Clears the existing list then appends the new array
 
         #Updates the lists so the main class can access them
         if cmds.textScrollList(self.buildingMaterialsTSList, query=True, allItems=True) != None:#Checks if the list returns NONE becaise it's empty (This breaks everything and has annoyed me for about a day)
