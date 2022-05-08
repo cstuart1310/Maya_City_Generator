@@ -80,9 +80,9 @@ def addBuildingEffects(self,effect,buildingName):
         cmds.polyCube( subdivisionsX=5, subdivisionsY=4, subdivisionsZ=4,name=billboardName,width=5,height=3,depth=0.5)
         cmds.polyExtrudeFacet(billboardName+".f[64]",billboardName+".f[60]",billboardName+".f[75]",billboardName+".f[79]",kft=False, ltz=10, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces upwards to make a balcony
         if buildingName in self.windowBuildings:#checks if the building has windows as the billboard needs a slightly different rotation to prevent clipping
-            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(30,45),0])
+            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(-30,-45),0])
         else:#Regular range of rotation
-            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(0,45),0])
+            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(0,-45),0])
         cmds.parent(billboardName,buildingName)#Parents to the building (Mostly for organization)
         self.billboardBuildings.append(buildingName)#Adds the building into a list used for handling textures
 
