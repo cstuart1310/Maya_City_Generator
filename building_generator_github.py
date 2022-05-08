@@ -323,7 +323,9 @@ class BG_Window(object):
 
     def updateGroupName(self,*args):#Updates the group name variable and removes illegal characters
         self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)#Updates the buildingGroup name
-        self.buildingGroup=self.buildingGroup.replace(" ","_")
+        illegalChars=['~', ':', "'", '+', '[', '\\', '@', '^', '{', '%', '(', '-', '"', '*', '|', ',', '&', '<', '`', '}', '.', '=', ']', '!', '>', ';', '?', '#', '$', ')', '/'," "]
+        for illegal in illegalChars:#Loops through every illegal character in the above array
+            self.buildingGroup=self.buildingGroup.replace(illegal,"_")#Replaces any instances of the current illegal character with an underscore
 
 
     def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
@@ -367,7 +369,7 @@ class BG_Window(object):
 
     def randomiseValues(self,*args):
 
-        randomLayoutMode=['Uniform with spacing variation',"Uniform (Grid)","Random"]#picks a random value from the layout mode list
+        randomLayoutMode=random.choice(['Uniform with spacing variation',"Uniform (Grid)","Random"])#picks a random value from the layout mode list
         cmds.optionMenu(self.inpLayoutMode,edit=True,value=randomLayoutMode)#Updates the optionMenu with a random choice from the list
 
 
@@ -502,7 +504,7 @@ class BG_Window(object):
             if layoutMode=="Random":#Randomly places buildings (May cause collisions)
                 self.buildingPosition=[randFloat(valBuildingRangeMin,valBuildingRangeMax),self.buildingHeight/2,randFloat(valBuildingRangeMin,valBuildingRangeMax)] #Divs height by 2 because buildings are placed at 0 so half clips below
             
-            elif layoutMode=="Uniform":#Places buildings in a grid format with set spacing
+            elif layoutMode=="Uniform (Grid)":#Places buildings in a grid format with set spacing
                 self.buildingPosition=[prevPosition,self.buildingHeight/2,zVal]
                 prevPosition=prevPosition+(self.buildingWidth*2)
                 if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
