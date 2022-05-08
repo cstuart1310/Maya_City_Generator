@@ -264,9 +264,8 @@ class BG_Window(object):
         cmds.separator(height=20)
         
         cmds.text( label='Group Name' )
-        self.inpBuildingGroup = cmds.textField(text="Buildings")
-        self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)
-        
+        self.inpBuildingGroup = cmds.textField(text="Buildings")#Text input for the group name that the buildings are placed into
+        self.updateGroupName()
         #create layout
         cmds.columnLayout(adjustableColumn = True)
         self.inpLayoutMode = cmds.optionMenu( label='Layout mode',width=200)#Creates the dropdown menu for the layout mode options
@@ -323,7 +322,9 @@ class BG_Window(object):
         cmds.showWindow()
 
 
-
+    def updateGroupName(self,*args):#Updates the group name variable and removes illegal characters
+        self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)#Updates the buildingGroup name
+        self.buildingGroup=self.buildingGroup.replace(" ","_")
 
 
     def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
@@ -351,7 +352,7 @@ class BG_Window(object):
 
 
     def removeBuildings(self, *args):#Removes the last generated city (Whichever name is stored in self.buildinggroup)
-        self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)#Updates the buildingGroup name
+        self.updateGroupName()
         if cmds.objExists(self.buildingGroup):
             cmds.delete(self.buildingGroup) #Deletes the buildings group
         else:
@@ -459,7 +460,7 @@ class BG_Window(object):
 
 
         #main loop
-        self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)
+        self.updateGroupName()
         if cmds.objExists(self.buildingGroup):
             cmds.confirmDialog(title="Warning!",message=("A group named "+self.buildingGroup+" already exists, generated buildings will be placed into it"))
         else:
