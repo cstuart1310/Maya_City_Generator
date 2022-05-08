@@ -75,11 +75,18 @@ def addBuildingEffects(self,effect,buildingName):
             cmds.parent(balconyName,buildingName)#Parents the balcony to the building (Mostly for organization)
         self.balconyBuildings.append(buildingName)#Adds the building into a list used for handling textures
 
+    elif effect=="addHeliPad":
+        heliPadName=(buildingName+"_helipad_1")
+        cmds.polyCylinder( subdivisionsX=8, subdivisionsY=2, subdivisionsZ=2, height=0.5,radius=2,name=heliPadName)
+        heliPadPosition=[]
+        cmds.xform(heliPadName,translation=[self.buildingPosition[0],self.buildingHeight,(self.buildingPosition[2]-3)])
+        cmds.parent(heliPadName,buildingName)#Parents the helipad to the building (Mostly for organization)
+
 
     elif effect=="applyMaterial":#Effect to add materials from a predetermined list to specific parts of building geometry. Has to be last so all geometry is there
         uvScale=cmds.floatSliderGrp(self.inpUVScale,query=True, value=True)#Gets the scale factor from the slider
         cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the building
-
+        self.heliPadBuildings.append(buildingName)#Adds the building into a list used for handling textures
         
 
         #Assigns main building textures
@@ -113,6 +120,17 @@ def addBuildingEffects(self,effect,buildingName):
             cmds.sets(forceElement=randomMatGlass)#Apply a random glass material
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
+        #Assigns helipad textures
+        if buildingName in self.heliPadBuildings and len(self.materialsWindow.heliPadMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes
+            randomMatHeliPad=random.choice(self.materialsWindow.heliPadMaterials)
+            print("Assigning ",randomMatHeliPad,"as the helipad mat for",buildingName)
+            for heliPadName in cmds.ls(objectsOnly=True):#Loops through all objects in the scene
+                if buildingName in heliPadName and "HeliPad" in heliPadName:
+                    cmds.polyAutoProjection(heliPadName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=2, sc=1, o=1, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
+                    cmds.select(heliPadName)#Selects the balcony by its name
+                    cmds.sets(forceElement=randomMatHeliPad)#Apply the same texture to the balcony as the main building
+                    cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
+            
         #Assigns roof textures
         if len(self.materialsWindow.roofMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
             randomMatRoof=random.choice(self.materialsWindow.roofMaterials)
@@ -153,10 +171,15 @@ class material_Window(object):#Class for the wiondows to do with the material se
         if cmds.textScrollList(self.roofMaterialsTSList, query=True, allItems=True) != None:
             self.roofMaterials=cmds.textScrollList(self.roofMaterialsTSList, query=True, allItems=True)
 
+        if cmds.textScrollList(self.heliPadMaterialsTSList, query=True, allItems=True) != None:
+            self.heliPadMaterials=cmds.textScrollList(self.heliPadMaterialsTSList, query=True, allItems=True)
+
         
         print("Building Materials",self.buildingMaterials)
         print("Glass Materials",self.glassMaterials)
         print("Roof Materials",self.roofMaterials)
+        print("HeliPad Materials",self.heliPadMaterials)
+
 
 
     def clearMaterialList(self,window,TSList,matList,*args):
@@ -169,6 +192,7 @@ class material_Window(object):#Class for the wiondows to do with the material se
         self.buildingMaterials=[]
         self.glassMaterials=[]
         self.roofMaterials=[]
+        self.heliPadMaterials=[]
 
 
     def createMaterialUI(self,*args):#Creates and opens the window (Not in init so can be called seperately to creating the object)
@@ -200,6 +224,11 @@ class material_Window(object):#Class for the wiondows to do with the material se
         self.roofMaterialsTSList=cmds.textScrollList('Roof Materials', append=self.roofMaterials) 
         roofMaterialsAppendButton=cmds.button( label='Add to Roof Materials list', command=lambda x: self.addMaterial(self,self.roofMaterials,self.roofMaterialsTSList))#Button to add selections to the list
         roofMaterialsClearButton=cmds.button("Clear Roof Materials list",command=lambda x:self.clearMaterialList(self,self.roofMaterialsTSList,self.roofMaterials))#Removes all items then appends the new array (Helps prevent duplicates))#Button to clear the list
+ 
+        cmds.text( label='Helicopter Pad Materials' )#Title for this section
+        self.heliPadMaterialsTSList=cmds.textScrollList('Helicopter Pad Materials', append=self.heliPadMaterials) 
+        heliPadAppendButton=cmds.button( label='Add to Heli-Pad Materials list', command=lambda x: self.addMaterial(self,self.heliPadMaterials,self.heliPadMaterialsTSList))#Button to add selections to the list
+        heliPadClearButton=cmds.button("Clear Heli-Pad Materials list",command=lambda x:self.clearMaterialList(self,self.heliPadMaterialsTSList,self.heliPadMaterials))#Removes all items then appends the new array (Helps prevent duplicates))#Button to clear the list
  
         
         cmds.separator()
@@ -271,20 +300,21 @@ class BG_Window(object):
         self.inpEffectAddBalcony=cmds.checkBox(label='Add balconies', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddBalconyChance))
         self.inpEffectAddBalconyChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
+        self.inpEffectAddHeliPad=cmds.checkBox(label='Add Helicopter Landing Pads', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddHeliPadChance))
+        self.inpEffectAddHeliPadChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
+
         self.inpEffectapplyMaterial=cmds.checkBox(label='Auto UV and apply material(s) to buildings',onCommand=lambda x: self.toggleSliderLock(self.inpUVScale))#Doesn't have a chance input because it will always happen on all buildings if selected
         self.inpUVScale=cmds.floatSliderGrp(field=True, label='UV Scale:', minValue=0.5,maxValue=10, value=5,enable=False)
+       
         cmds.columnLayout(adjustableColumn = True)
-        cmds.separator(style='shelf',width=800)#Resets the layout to one after the other
+        cmds.separator(style='shelf',width=800,height=50)
 
-
-
-        #Gen button
-        self.buildBtn = cmds.button( label='Create Buildings', command=self.genBuildings,width=500)
-        self.undoBtn = cmds.button( label='Undo Last City', command=self.removeBuildings,width=500)
-        cmds.separator(style='shelf',width=800)#Resets the layout to one after the other
+        self.buildBtn = cmds.button( label='Create Buildings', command=self.genBuildings,width=500)#generation button
+        self.undoBtn = cmds.button( label='Undo Last City', command=self.removeBuildings,width=500)#undo button
+        cmds.separator(style='shelf',width=800)
         self.randomiseBtn = cmds.button( label='Randomize all values', command=self.randomiseValues,width=500)
         self.resetBtn = cmds.button( label='Reset all values to defaults', command=self.resetValues,width=500)
-        cmds.separator(style='shelf',width=800)#Resets the layout to one after the other
+        cmds.separator(style='shelf',width=800)
         self.materialsBtn=cmds.button(label="Open Material Management Window",command=self.materialsWindow.createMaterialUI)
 
 
@@ -403,6 +433,7 @@ class BG_Window(object):
         self.windowBuildings=[]#An array of buildings with window geometry so the material can be different to non-window buildings
         self.bevelBuildings=[]#An array of buildings with bevels applied so different faces can be selected for the roof mats
         self.balconyBuildings=[]#An array of buildings with balconies applied (Need to be UV'd and textured seperately)
+        self.heliPadBuildings=[]
         print("Building Materials",self.materialsWindow.buildingMaterials)
         print("Glass Materials",self.materialsWindow.glassMaterials)
 
@@ -418,6 +449,8 @@ class BG_Window(object):
             effects.append(["bevel",cmds.intSliderGrp(self.inpEffectBevelChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectAddBalcony, query=True, value=True):#Queries if check box is checked 
             effects.append(["addBalcony",cmds.intSliderGrp(self.inpEffectAddBalconyChance, query=True, value=True)])#Adds the effect to the list of effects to use
+        if cmds.checkBox(self.inpEffectAddHeliPad, query=True, value=True):#Queries if check box is checked 
+            effects.append(["addHeliPad",cmds.intSliderGrp(self.inpEffectAddHeliPadChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectRotate, query=True, value=True):#Queries if check box is checked
             effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectapplyMaterial, query=True, value=True):#Queries if check box is checked. addMaterial must be last so all geometry exists to texture
