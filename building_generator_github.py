@@ -323,7 +323,7 @@ class BG_Window(object):
 
     def updateGroupName(self,*args):#Updates the group name variable and removes illegal characters
         self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)#Updates the buildingGroup name
-        illegalChars=['~', ':', "'", '+', '[', '\\', '@', '^', '{', '%', '(', '-', '"', '*', '|', ',', '&', '<', '`', '}', '.', '=', ']', '!', '>', ';', '?', '#', '$', ')', '/'," "]
+        illegalChars=['~', ':', "'", '+', '[', '\\', '@', '^', '{', '%', '(', '-', '"', '*', '|', ',', '&', '<', '`', '}', '.', '=', ']', '!', '>', ';', '?', '#', '$', ')', '/'," ","£"]#List of characters to be replaced
         for illegal in illegalChars:#Loops through every illegal character in the above array
             self.buildingGroup=self.buildingGroup.replace(illegal,"_")#Replaces any instances of the current illegal character with an underscore
 
