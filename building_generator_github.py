@@ -1,12 +1,9 @@
 #Maya City Generator - Callum Stuart, Birmingham City University Visual Effects
 import maya.cmds as cmds
 import random
-import time
-import maya.mel as mel
 
-layoutMode="Uniform"
+layoutMode=""
 effects=[]#Effects to apply to a building
-pastPositions=[]
 
 #functions----------------------------------------
 
@@ -75,11 +72,18 @@ def addBuildingEffects(self,effect,buildingName):
             cmds.parent(balconyName,buildingName)#Parents the balcony to the building (Mostly for organization)
         self.balconyBuildings.append(buildingName)#Adds the building into a list used for handling textures
 
+    elif effect=="addHeliPad":
+        heliPadName=(buildingName+"_helipad_1")
+        cmds.polyCylinder( subdivisionsX=8, subdivisionsY=2, subdivisionsZ=2, height=0.5,radius=2,name=heliPadName)
+        heliPadPosition=[]
+        cmds.xform(heliPadName,translation=[self.buildingPosition[0],self.buildingHeight,(self.buildingPosition[2]-3)],rotation=[0,randInteger(1,359),0])
+        cmds.parent(heliPadName,buildingName)#Parents the helipad to the building (Mostly for organization)
+        self.heliPadBuildings.append(buildingName)#Adds the building into a list used for handling textures
+
 
     elif effect=="applyMaterial":#Effect to add materials from a predetermined list to specific parts of building geometry. Has to be last so all geometry is there
         uvScale=cmds.floatSliderGrp(self.inpUVScale,query=True, value=True)#Gets the scale factor from the slider
         cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the building
-
         
 
         #Assigns main building textures
@@ -113,6 +117,18 @@ def addBuildingEffects(self,effect,buildingName):
             cmds.sets(forceElement=randomMatGlass)#Apply a random glass material
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
+        #Assigns helipad textures
+        if buildingName in self.heliPadBuildings and len(self.materialsWindow.heliPadMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes
+            print(buildingName, "has helipad")
+            randomMatHeliPad=random.choice(self.materialsWindow.heliPadMaterials)
+            print("Assigning ",randomMatHeliPad,"as the helipad mat for",buildingName)
+            heliPadName=(buildingName+"_helipad_1")            
+            #cmds.polyAutoProjection(heliPadName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=2, sc=1, o=1, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
+            cmds.select(heliPadName)#Selects the balcony by its name
+            cmds.sets(forceElement=randomMatHeliPad)#Apply the same texture to the balcony as the main building
+            cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
+        else:
+            print("no helipad",buildingName)
         #Assigns roof textures
         if len(self.materialsWindow.roofMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
             randomMatRoof=random.choice(self.materialsWindow.roofMaterials)
@@ -138,10 +154,11 @@ def addBuildingEffects(self,effect,buildingName):
 #main-------------------------------------------------
 class material_Window(object):#Class for the wiondows to do with the material selections
 
-    def addMaterial(self,window,matList,TSList,*args):#Function used to add new materials to the given list
+    def addMaterial(self,window,matList,TSList,*args):#Function used to add new materials to the given list (And updates all global material lists)
         print(self,window,matList,TSList)
         newMatList=matList+(cmds.textScrollList(self.sceneMaterialsTS, query=True, si=True))#Concats the original list and the user's selections into one list
-        cmds.textScrollList(TSList,edit=True,append=newMatList)#Removes all items then appends the new array (Helps prevent duplicates)
+        newMatList=list(dict.fromkeys(newMatList))#Converts the material list into a dictionary and back to remove duplicates
+        cmds.textScrollList(TSList,edit=True,removeAll=True,append=newMatList)#Clears the existing list then appends the new array
 
         #Updates the lists so the main class can access them
         if cmds.textScrollList(self.buildingMaterialsTSList, query=True, allItems=True) != None:#Checks if the list returns NONE becaise it's empty (This breaks everything and has annoyed me for about a day)
@@ -153,10 +170,15 @@ class material_Window(object):#Class for the wiondows to do with the material se
         if cmds.textScrollList(self.roofMaterialsTSList, query=True, allItems=True) != None:
             self.roofMaterials=cmds.textScrollList(self.roofMaterialsTSList, query=True, allItems=True)
 
+        if cmds.textScrollList(self.heliPadMaterialsTSList, query=True, allItems=True) != None:
+            self.heliPadMaterials=cmds.textScrollList(self.heliPadMaterialsTSList, query=True, allItems=True)
+
         
         print("Building Materials",self.buildingMaterials)
         print("Glass Materials",self.glassMaterials)
         print("Roof Materials",self.roofMaterials)
+        print("HeliPad Materials",self.heliPadMaterials)
+
 
 
     def clearMaterialList(self,window,TSList,matList,*args):
@@ -165,17 +187,14 @@ class material_Window(object):#Class for the wiondows to do with the material se
         matList=matList.clear()
 
     def __init__(self,*args):
+        #Creates the objects lists (Done in the init so they don't reset when the UI is re-opened)
         self.buildingMaterials=[]
         self.glassMaterials=[]
         self.roofMaterials=[]
+        self.heliPadMaterials=[]
 
 
-    def createMaterialUI(self,*args):
-        self.buildingMaterials=[]
-        self.glassMaterials=[]
-        self.roofMaterials=[]
-
-
+    def createMaterialUI(self,*args):#Creates and opens the window (Not in init so can be called seperately to creating the object)
 
         self.window="Material List"
         self.title = "Material List"
@@ -184,26 +203,32 @@ class material_Window(object):#Class for the wiondows to do with the material se
         self.materialListWindow=cmds.window(title='Materials List', width=200)
 
         cmds.columnLayout(rowSpacing=10, columnWidth=200)
-        cmds.text("Scene Materials")
+        cmds.text("Scene Materials",font="boldLabelFont")
+        cmds.text("Select the desired shader groups from the list below (CTRL/Shift select for multiple) \n Click the button to add them to the wanted group \n All changes are saved automatically, so this window can be closed at any time",align="left")
         sceneMaterialsList = cmds.ls(set=True)#Gets all materials (sets) in the scene
         self.sceneMaterialsTS=cmds.textScrollList(append=sceneMaterialsList,allowMultiSelection=True) #Shows all materials in the scene as a textScrollList
         
         cmds.rowColumnLayout(numberOfRows=4)#Changes to a 2 column layout for side-by-side buttons
-        cmds.text( label='Building Materials')#Title for this section
+        cmds.text( label='Building Materials',font="boldLabelFont")#Title for this section
         self.buildingMaterialsTSList=cmds.textScrollList('Building Materials', append=self.buildingMaterials) 
         buildingMaterialsAppendButton=cmds.button( label='Add to Building Material list', command=lambda x: self.addMaterial(self,self.buildingMaterials,self.buildingMaterialsTSList))#Button to add selections to the list
         buildingMaterialsClearButton=cmds.button("Clear Building Material list",command=lambda x:self.clearMaterialList(self,self.buildingMaterialsTSList,self.buildingMaterials))#Removes all items then appends the new array (Helps prevent duplicates))#Button to clear the list
       
 
-        cmds.text( label='Glass Materials' )#Title for this section
+        cmds.text( label='Glass Materials',font="boldLabelFont" )#Title for this section
         self.glassMaterialsTSList=cmds.textScrollList('Glass Materials', append=self.glassMaterials) 
         glassMaterialsAppendButton=cmds.button( label='Add to Glass Materials list', command=lambda x: self.addMaterial(self,self.glassMaterials,self.glassMaterialsTSList))#Button to add selections to the list
         glassMaterialsClearButton=cmds.button("Clear Glass Materials list",command=lambda x:self.clearMaterialList(self,self.glassMaterialsTSList,self.glassMaterials))#Removes all items then appends the new array (Helps prevent duplicates))#Button to clear the list
  
-        cmds.text( label='Roof Materials' )#Title for this section
+        cmds.text( label='Roof Materials',font="boldLabelFont" )#Title for this section
         self.roofMaterialsTSList=cmds.textScrollList('Roof Materials', append=self.roofMaterials) 
         roofMaterialsAppendButton=cmds.button( label='Add to Roof Materials list', command=lambda x: self.addMaterial(self,self.roofMaterials,self.roofMaterialsTSList))#Button to add selections to the list
         roofMaterialsClearButton=cmds.button("Clear Roof Materials list",command=lambda x:self.clearMaterialList(self,self.roofMaterialsTSList,self.roofMaterials))#Removes all items then appends the new array (Helps prevent duplicates))#Button to clear the list
+ 
+        cmds.text( label='Helicopter Pad Materials',font="boldLabelFont" )#Title for this section
+        self.heliPadMaterialsTSList=cmds.textScrollList('Helicopter Pad Materials', append=self.heliPadMaterials) 
+        heliPadAppendButton=cmds.button( label='Add to Heli-Pad Materials list', command=lambda x: self.addMaterial(self,self.heliPadMaterials,self.heliPadMaterialsTSList))#Button to add selections to the list
+        heliPadClearButton=cmds.button("Clear Heli-Pad Materials list",command=lambda x:self.clearMaterialList(self,self.heliPadMaterialsTSList,self.heliPadMaterials))#Removes all items then appends the new array (Helps prevent duplicates))#Button to clear the list
  
         
         cmds.separator()
@@ -238,14 +263,13 @@ class BG_Window(object):
         cmds.separator(height=20)
         
         cmds.text( label='Group Name' )
-        self.inpBuildingGroup = cmds.textField(text="Buildings")
-        self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)
-        
+        self.inpBuildingGroup = cmds.textField(text="Buildings",statusBarMessage="The name of the group to be created that the buildings will be placed into")#Text input for the group name that the buildings are placed into
+        self.updateGroupName()#Updates the group name and removes any illegal characters
         #create layout
         cmds.columnLayout(adjustableColumn = True)
-        self.inpLayoutMode = cmds.optionMenu( label='Layout mode',width=200)#Creates the dropdown menu for the layout mode options
+        self.inpLayoutMode = cmds.optionMenu( label='Layout mode',width=200,statusBarMessage="The mode used to decide where to place the buildings")#Creates the dropdown menu for the layout mode options
         cmds.menuItem(label='Uniform with spacing variation') #Layout mode option for grid layout with some random leeway (Best looking one)
-        cmds.menuItem(label='Uniform')#Layout mode option for grid layout
+        cmds.menuItem(label='Uniform (Grid)')#Layout mode option for grid layout
         cmds.menuItem(label='Random')#Layout mode option for entirely random positions
         cmds.separator(height=20)
 
@@ -260,40 +284,48 @@ class BG_Window(object):
 
         #Effect Tickboxes and sliders
         cmds.rowColumnLayout(nc=2)#Changes the layout so can have 2 items next to each other
-        self.inpEffectAddWindows=cmds.checkBox(label='Add Windows',changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddWindowsChance))#Checkbox for toggling the effect. Lambda is used to define the changecommand without actually running it, so a variable can be passed and the one function can manage all slider toggles
+        self.inpEffectAddWindows=cmds.checkBox(label='Add Windows',changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddWindowsChance),statusBarMessage="Adds windows to the buildings by extruding faces inwards")#Checkbox for toggling the effect. Lambda is used to define the changecommand without actually running it, so a variable can be passed and the one function can manage all slider toggles
         self.inpEffectAddWindowsChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
 
-        self.inpEffectBevel=cmds.checkBox(label='Bevel Top edges',changeCommand=lambda x: self.toggleSliderLock(self.inpEffectBevelChance))
+        self.inpEffectBevel=cmds.checkBox(label='Bevel Top edges',changeCommand=lambda x: self.toggleSliderLock(self.inpEffectBevelChance),statusBarMessage="Bevels one of the top edges of the building")
         self.inpEffectBevelChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
-        self.inpEffectScaleTop=cmds.checkBox(label='Scale Top Edges', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectScaleTopChance))
+        self.inpEffectScaleTop=cmds.checkBox(label='Scale Top Edges', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectScaleTopChance),statusBarMessage="Scales the top of the building inwards or outwards so it isn't a perfect oblong")
         self.inpEffectScaleTopChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
-        self.inpEffectRotate=cmds.checkBox(label='Rotate building', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectRotateChance))
+        self.inpEffectRotate=cmds.checkBox(label='Rotate building', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectRotateChance),statusBarMessage="Rotates the building around the Y axis")
         self.inpEffectRotateChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
-        self.inpEffectAddBalcony=cmds.checkBox(label='Add balconies', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddBalconyChance))
+        self.inpEffectAddBalcony=cmds.checkBox(label='Add balconies', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddBalconyChance),statusBarMessage="Creates and places a seperate piece of geometry on the building which looks like a balcony \n (Only placed along the edge loops)")
         self.inpEffectAddBalconyChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
-        self.inpEffectapplyMaterial=cmds.checkBox(label='Auto UV and apply material(s) to buildings',onCommand=lambda x: self.toggleSliderLock(self.inpUVScale))#Doesn't have a chance input because it will always happen on all buildings if selected
+        self.inpEffectAddHeliPad=cmds.checkBox(label='Add Helicopter Landing Pads', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddHeliPadChance),statusBarMessage="Creates and places a heli-pad on the roof of the building")
+        self.inpEffectAddHeliPadChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
+
+        self.inpEffectapplyMaterial=cmds.checkBox(label='Auto UV and apply material(s) to buildings',onCommand=lambda x: self.toggleSliderLock(self.inpUVScale),statusBarMessage="Performs an automatic UV on the building and all extra elements, then applies a random material from the lists in the material management window")#Doesn't have a chance input because it will always happen on all buildings if selected
         self.inpUVScale=cmds.floatSliderGrp(field=True, label='UV Scale:', minValue=0.5,maxValue=10, value=5,enable=False)
-
-        cmds.separator(style='none')#Resets the layout to one after the other
+       
         cmds.columnLayout(adjustableColumn = True)
+        cmds.separator(style='shelf',width=800,height=50)
 
-        #Gen button
-        self.buildBtn = cmds.button( label='Create Buildings', command=self.genBuildings,width=500)
-        self.undoBtn = cmds.button( label='Undo Last City', command=self.removeBuildings,width=500)
-        self.randomiseBtn = cmds.button( label='Randomize all values', command=self.randomiseValues,width=500)
-        self.resetBtn = cmds.button( label='Reset all values to defaults', command=self.resetValues,width=500)
-        self.materialsBtn=cmds.button(label="Open Material Management Window",command=self.materialsWindow.createMaterialUI)
+        self.buildBtn = cmds.button( label='Create Buildings', command=self.genBuildings,width=500,statusBarMessage="Generates a city using the specified options")#generation button
+        self.undoBtn = cmds.button( label='Undo Last City', command=self.removeBuildings,width=500,statusBarMessage="Undo's the last city with the name currently in the group name box.")#undo button
+        cmds.separator(style='shelf',width=800)
+        self.randomiseBtn = cmds.button( label='Randomize all values', command=self.randomiseValues,width=500,statusBarMessage="Randomizes the effects and their associated values")
+        self.resetBtn = cmds.button( label='Reset all values to defaults', command=self.resetValues,width=500,statusBarMessage="Resets the values to the defaults")
+        cmds.separator(style='shelf',width=800)
+        self.materialsBtn=cmds.button(label="Open Material Management Window",command=self.materialsWindow.createMaterialUI,statusBarMessage="Opens the window used to specify materials to different elements of the buildings")
 
 
 
         cmds.showWindow()
 
 
-
+    def updateGroupName(self,*args):#Updates the group name variable and removes illegal characters
+        self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)#Updates the buildingGroup name
+        illegalChars=['~', ':', "'", '+', '[', '\\', '@', '^', '{', '%', '(', '-', '"', '*', '|', ',', '&', '<', '`', '}', '.', '=', ']', '!', '>', ';', '?', '#', '$', ')', '/'," ","£"]#List of characters to be replaced
+        for illegal in illegalChars:#Loops through every illegal character in the above array
+            self.buildingGroup=self.buildingGroup.replace(illegal,"_")#Replaces any instances of the current illegal character with an underscore
 
 
     def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
@@ -321,7 +353,7 @@ class BG_Window(object):
 
 
     def removeBuildings(self, *args):#Removes the last generated city (Whichever name is stored in self.buildinggroup)
-        self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)#Updates the buildingGroup name
+        self.updateGroupName()
         if cmds.objExists(self.buildingGroup):
             cmds.delete(self.buildingGroup) #Deletes the buildings group
         else:
@@ -336,6 +368,12 @@ class BG_Window(object):
             return False
 
     def randomiseValues(self,*args):
+
+        randomLayoutMode=random.choice(['Uniform with spacing variation',"Uniform (Grid)","Random"])#picks a random value from the layout mode list
+        cmds.optionMenu(self.inpLayoutMode,edit=True,value=randomLayoutMode)#Updates the optionMenu with a random choice from the list
+
+
+
         #Randomizes the height width and depth
         buildingRangeMin=randInteger(10,100)#Sets the lower bound as a var so upper cant be smaller than lower
         cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value1=buildingRangeMin)#Updates the value to a random one
@@ -368,6 +406,14 @@ class BG_Window(object):
         cmds.checkBox(self.inpEffectRotate, edit=True, value=checkBoxBool)
         cmds.intSliderGrp(self.inpEffectRotateChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
 
+        checkBoxBool=random.choice([True, False])
+        cmds.checkBox(self.inpEffectAddBalcony, edit=True, value=checkBoxBool)
+        cmds.intSliderGrp(self.inpEffectAddBalconyChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
+
+        checkBoxBool=random.choice([True, False])
+        cmds.checkBox(self.inpEffectAddHeliPad, edit=True, value=checkBoxBool)
+        cmds.intSliderGrp(self.inpEffectAddHeliPadChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
+
     def resetValues(self,*args):#Resets all values to their defaults
         cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value1=10,value2=100)#Updates the value to a random one
         cmds.floatFieldGrp(self.inpBuildingWidth, edit=True, value1=10,value2=20)#Updates the value to a random one        
@@ -378,8 +424,9 @@ class BG_Window(object):
         cmds.intSliderGrp(self.inpEffectScaleTopChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
         cmds.intSliderGrp(self.inpEffectRotateChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
         cmds.intSliderGrp(self.inpEffectAddBalconyChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        cmds.intSliderGrp(self.inpEffectAddHeliPadChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
 
-        cmds.optionMenu(self.inpLayoutMode,edit=True,value="Uniform with spacing variation")#Updates the optionMenu with a random choice from the list
+        cmds.optionMenu(self.inpLayoutMode,edit=True,value="Uniform with spacing variation")#Resets the layout mode to the default
         
 
 
@@ -404,6 +451,7 @@ class BG_Window(object):
         self.windowBuildings=[]#An array of buildings with window geometry so the material can be different to non-window buildings
         self.bevelBuildings=[]#An array of buildings with bevels applied so different faces can be selected for the roof mats
         self.balconyBuildings=[]#An array of buildings with balconies applied (Need to be UV'd and textured seperately)
+        self.heliPadBuildings=[]
         print("Building Materials",self.materialsWindow.buildingMaterials)
         print("Glass Materials",self.materialsWindow.glassMaterials)
 
@@ -419,6 +467,8 @@ class BG_Window(object):
             effects.append(["bevel",cmds.intSliderGrp(self.inpEffectBevelChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectAddBalcony, query=True, value=True):#Queries if check box is checked 
             effects.append(["addBalcony",cmds.intSliderGrp(self.inpEffectAddBalconyChance, query=True, value=True)])#Adds the effect to the list of effects to use
+        if cmds.checkBox(self.inpEffectAddHeliPad, query=True, value=True):#Queries if check box is checked 
+            effects.append(["addHeliPad",cmds.intSliderGrp(self.inpEffectAddHeliPadChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectRotate, query=True, value=True):#Queries if check box is checked
             effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectapplyMaterial, query=True, value=True):#Queries if check box is checked. addMaterial must be last so all geometry exists to texture
@@ -426,7 +476,7 @@ class BG_Window(object):
 
 
         #main loop
-        self.buildingGroup=cmds.textField(self.inpBuildingGroup,query=True,text=True)
+        self.updateGroupName()
         if cmds.objExists(self.buildingGroup):
             cmds.confirmDialog(title="Warning!",message=("A group named "+self.buildingGroup+" already exists, generated buildings will be placed into it"))
         else:
@@ -454,7 +504,7 @@ class BG_Window(object):
             if layoutMode=="Random":#Randomly places buildings (May cause collisions)
                 self.buildingPosition=[randFloat(valBuildingRangeMin,valBuildingRangeMax),self.buildingHeight/2,randFloat(valBuildingRangeMin,valBuildingRangeMax)] #Divs height by 2 because buildings are placed at 0 so half clips below
             
-            elif layoutMode=="Uniform":#Places buildings in a grid format with set spacing
+            elif layoutMode=="Uniform (Grid)":#Places buildings in a grid format with set spacing
                 self.buildingPosition=[prevPosition,self.buildingHeight/2,zVal]
                 prevPosition=prevPosition+(self.buildingWidth*2)
                 if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
