@@ -36,14 +36,10 @@ def addBuildingEffects(self,effect,buildingName):
         cmds.polyBevel(buildingName+".e[25:29]", offset=randFloat(0.1,0.9),offsetAsFraction=True )
         self.bevelBuildings.append(buildingName)#USed for the texture effect so it knows which buildings to add different glass mats to
 
-        
     elif effect=="rotate":#Rotates the building along the Y axis only
         cmds.select(buildingName,hierarchy=True)#Selects the building AND children (Else children aren't rotated)
         rotateVal=(0,randFloat(5,355),0)#Gets a random val (range is 5-355 so the rotation is always noticable)
         cmds.xform(buildingName,rotation=rotateVal,worldSpace=True,centerPivots=True,absolute=True)#Rotates the building
-        
-
-
 
     elif effect=="addBalcony":#Adds a balcony(s) to the side of the building
         midEdges=[5,10,15,20]
@@ -75,10 +71,17 @@ def addBuildingEffects(self,effect,buildingName):
     elif effect=="addHeliPad":
         heliPadName=(buildingName+"_helipad_1")
         cmds.polyCylinder( subdivisionsX=8, subdivisionsY=2, subdivisionsZ=2, height=0.5,radius=2,name=heliPadName)
-        heliPadPosition=[]
         cmds.xform(heliPadName,translation=[self.buildingPosition[0],self.buildingHeight,(self.buildingPosition[2]-3)],rotation=[0,randInteger(1,359),0])
         cmds.parent(heliPadName,buildingName)#Parents the helipad to the building (Mostly for organization)
         self.heliPadBuildings.append(buildingName)#Adds the building into a list used for handling textures
+
+    elif effect=="addBillboard":
+        billboardName=(buildingName+"_billboard_1")
+        cmds.polyCube( subdivisionsX=5, subdivisionsY=4, subdivisionsZ=4,name=billboardName,width=5,height=3,depth=0.5)
+        cmds.polyExtrudeFacet(billboardName+".f[64]",billboardName+".f[60]",billboardName+".f[75]",billboardName+".f[79]",kft=False, ltz=10, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces upwards to make a balcony
+        cmds.xform(billboardName,translation=[(self.buildingPosition[0]-3),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-3)],rotation=[0,randInteger(-45,45),0])
+        cmds.parent(billboardName,buildingName)#Parents the helipad to the building (Mostly for organization)
+        self.billboardBuildings.append(buildingName)#Adds the building into a list used for handling textures
 
 
     elif effect=="applyMaterial":#Effect to add materials from a predetermined list to specific parts of building geometry. Has to be last so all geometry is there
@@ -302,6 +305,9 @@ class BG_Window(object):
         self.inpEffectAddHeliPad=cmds.checkBox(label='Add Helicopter Landing Pads', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddHeliPadChance),statusBarMessage="Creates and places a heli-pad on the roof of the building")
         self.inpEffectAddHeliPadChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
+        self.inpEffectAddBillboard=cmds.checkBox(label='Add Billboards', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddBillboardChance),statusBarMessage="Creates and places a billboard on the roof of the building")
+        self.inpEffectAddBillboardChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
+
         self.inpEffectapplyMaterial=cmds.checkBox(label='Auto UV and apply material(s) to buildings',onCommand=lambda x: self.toggleSliderLock(self.inpUVScale),statusBarMessage="Performs an automatic UV on the building and all extra elements, then applies a random material from the lists in the material management window")#Doesn't have a chance input because it will always happen on all buildings if selected
         self.inpUVScale=cmds.floatSliderGrp(field=True, label='UV Scale:', minValue=0.5,maxValue=10, value=5,enable=False)
        
@@ -452,6 +458,7 @@ class BG_Window(object):
         self.bevelBuildings=[]#An array of buildings with bevels applied so different faces can be selected for the roof mats
         self.balconyBuildings=[]#An array of buildings with balconies applied (Need to be UV'd and textured seperately)
         self.heliPadBuildings=[]
+        self.billboardBuildings=[]
         print("Building Materials",self.materialsWindow.buildingMaterials)
         print("Glass Materials",self.materialsWindow.glassMaterials)
 
@@ -469,6 +476,8 @@ class BG_Window(object):
             effects.append(["addBalcony",cmds.intSliderGrp(self.inpEffectAddBalconyChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectAddHeliPad, query=True, value=True):#Queries if check box is checked 
             effects.append(["addHeliPad",cmds.intSliderGrp(self.inpEffectAddHeliPadChance, query=True, value=True)])#Adds the effect to the list of effects to use
+        if cmds.checkBox(self.inpEffectAddBillboard, query=True, value=True):#Queries if check box is checked 
+            effects.append(["addBillboard",cmds.intSliderGrp(self.inpEffectAddBillboardChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectRotate, query=True, value=True):#Queries if check box is checked
             effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectapplyMaterial, query=True, value=True):#Queries if check box is checked. addMaterial must be last so all geometry exists to texture
