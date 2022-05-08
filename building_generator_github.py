@@ -71,16 +71,19 @@ def addBuildingEffects(self,effect,buildingName):
     elif effect=="addHeliPad":
         heliPadName=(buildingName+"_helipad_1")
         cmds.polyCylinder( subdivisionsX=8, subdivisionsY=2, subdivisionsZ=2, height=0.5,radius=2,name=heliPadName)
-        cmds.xform(heliPadName,translation=[self.buildingPosition[0],self.buildingHeight,(self.buildingPosition[2]-3)],rotation=[0,randInteger(1,359),0])
+        cmds.xform(heliPadName,translation=[(self.buildingPosition[0]+3),self.buildingHeight,(self.buildingPosition[2]-3)],rotation=[0,randInteger(1,359),0])
         cmds.parent(heliPadName,buildingName)#Parents the helipad to the building (Mostly for organization)
         self.heliPadBuildings.append(buildingName)#Adds the building into a list used for handling textures
-
+    
     elif effect=="addBillboard":
         billboardName=(buildingName+"_billboard_1")
         cmds.polyCube( subdivisionsX=5, subdivisionsY=4, subdivisionsZ=4,name=billboardName,width=5,height=3,depth=0.5)
         cmds.polyExtrudeFacet(billboardName+".f[64]",billboardName+".f[60]",billboardName+".f[75]",billboardName+".f[79]",kft=False, ltz=10, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces upwards to make a balcony
-        cmds.xform(billboardName,translation=[(self.buildingPosition[0]-3),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-3)],rotation=[0,randInteger(-45,45),0])
-        cmds.parent(billboardName,buildingName)#Parents the helipad to the building (Mostly for organization)
+        if buildingName in self.windowBuildings:#checks if the building has windows as the billboard needs a slightly different rotation to prevent clipping
+            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(30,45),0])
+        else:#Regular range of rotation
+            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(0,45),0])
+        cmds.parent(billboardName,buildingName)#Parents to the building (Mostly for organization)
         self.billboardBuildings.append(buildingName)#Adds the building into a list used for handling textures
 
 
@@ -88,7 +91,6 @@ def addBuildingEffects(self,effect,buildingName):
         uvScale=cmds.floatSliderGrp(self.inpUVScale,query=True, value=True)#Gets the scale factor from the slider
         cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the building
         
-
         #Assigns main building textures
         if len(self.materialsWindow.buildingMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
             randomMatBuilding=random.choice(self.materialsWindow.buildingMaterials)
@@ -106,8 +108,6 @@ def addBuildingEffects(self,effect,buildingName):
                         cmds.sets(forceElement=randomMatBuilding)#Apply the same texture to the balcony as the main building
                         cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
-
-
         #Assigns window textures
         if buildingName in self.windowBuildings and len(self.materialsWindow.glassMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes
             randomMatGlass=random.choice(self.materialsWindow.glassMaterials)
@@ -121,17 +121,24 @@ def addBuildingEffects(self,effect,buildingName):
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
         #Assigns helipad textures
-        if buildingName in self.heliPadBuildings and len(self.materialsWindow.heliPadMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes
-            print(buildingName, "has helipad")
+        if buildingName in self.heliPadBuildings and len(self.materialsWindow.heliPadMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes            
             randomMatHeliPad=random.choice(self.materialsWindow.heliPadMaterials)
             print("Assigning ",randomMatHeliPad,"as the helipad mat for",buildingName)
             heliPadName=(buildingName+"_helipad_1")            
-            #cmds.polyAutoProjection(heliPadName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=2, sc=1, o=1, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
             cmds.select(heliPadName)#Selects the balcony by its name
             cmds.sets(forceElement=randomMatHeliPad)#Apply the same texture to the balcony as the main building
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
-        else:
-            print("no helipad",buildingName)
+
+       #Assigns billboard textures
+        if buildingName in self.billboardBuildings and len(self.materialsWindow.billboardMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes            
+            randomMatbillboard=random.choice(self.materialsWindow.billboardMaterials)
+            print("Assigning ",randomMatbillboard,"as the billboard mat for",buildingName)
+            billboardName=(buildingName+"_billboard_1")            
+            cmds.polyAutoProjection(billboardName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=2, sc=1, o=1, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
+            cmds.select(billboardName)#Selects the balcony by its name
+            cmds.sets(forceElement=randomMatbillboard)#Apply the same texture to the balcony as the main building
+            cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
+
         #Assigns roof textures
         if len(self.materialsWindow.roofMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
             randomMatRoof=random.choice(self.materialsWindow.roofMaterials)
@@ -143,7 +150,6 @@ def addBuildingEffects(self,effect,buildingName):
                 cmds.select(buildingName+'.f[150:154]',buildingName+'.f[20:39]')#Select the faces of the roof (When beveled)                
             else:
                 cmds.select(buildingName+'.f[25:49]')#Select the faces of the roof (When flat)
-                
             cmds.sets(forceElement=randomMatRoof)#Apply a random roof material
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
@@ -176,11 +182,15 @@ class material_Window(object):#Class for the wiondows to do with the material se
         if cmds.textScrollList(self.heliPadMaterialsTSList, query=True, allItems=True) != None:
             self.heliPadMaterials=cmds.textScrollList(self.heliPadMaterialsTSList, query=True, allItems=True)
 
+        if cmds.textScrollList(self.billboardMaterialsTSList, query=True, allItems=True) != None:
+            self.billboardMaterials=cmds.textScrollList(self.billboardMaterialsTSList, query=True, allItems=True)
+
         
         print("Building Materials",self.buildingMaterials)
         print("Glass Materials",self.glassMaterials)
         print("Roof Materials",self.roofMaterials)
         print("HeliPad Materials",self.heliPadMaterials)
+        print("Billboard Materials",self.billboardMaterials)
 
 
 
@@ -190,11 +200,13 @@ class material_Window(object):#Class for the wiondows to do with the material se
         matList=matList.clear()
 
     def __init__(self,*args):
-        #Creates the objects lists (Done in the init so they don't reset when the UI is re-opened)
+        #Creates the objects lists (Done in the init so they don't reset when the UI is re-opened, innit?)
         self.buildingMaterials=[]
         self.glassMaterials=[]
         self.roofMaterials=[]
         self.heliPadMaterials=[]
+        self.billboardMaterials=[]
+
 
 
     def createMaterialUI(self,*args):#Creates and opens the window (Not in init so can be called seperately to creating the object)
@@ -232,7 +244,13 @@ class material_Window(object):#Class for the wiondows to do with the material se
         self.heliPadMaterialsTSList=cmds.textScrollList('Helicopter Pad Materials', append=self.heliPadMaterials) 
         heliPadAppendButton=cmds.button( label='Add to Heli-Pad Materials list', command=lambda x: self.addMaterial(self,self.heliPadMaterials,self.heliPadMaterialsTSList))#Button to add selections to the list
         heliPadClearButton=cmds.button("Clear Heli-Pad Materials list",command=lambda x:self.clearMaterialList(self,self.heliPadMaterialsTSList,self.heliPadMaterials))#Removes all items then appends the new array (Helps prevent duplicates))#Button to clear the list
- 
+
+        cmds.text( label='Billboard Materials',font="boldLabelFont" )#Title for this section
+        self.billboardMaterialsTSList=cmds.textScrollList('Billboard Materials', append=self.billboardMaterials) 
+        billboardAppendButton=cmds.button( label='Add to billboard Materials list', command=lambda x: self.addMaterial(self,self.billboardMaterials,self.billboardMaterialsTSList))#Button to add selections to the list
+        billboardClearButton=cmds.button("Clear billboard Materials list",command=lambda x:self.clearMaterialList(self,self.billboardMaterialsTSList,self.billboardMaterials))#Removes all items then appends the new array (Helps prevent duplicates))#Button to clear the list
+
+
         
         cmds.separator()
         cmds.rowColumnLayout(numberOfRows=1)#Changes to a 2 column layout for side-by-side buttons
