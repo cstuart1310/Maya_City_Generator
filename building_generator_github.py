@@ -79,14 +79,14 @@ def addBuildingEffects(self,effect,buildingName):
         heliPadName=(buildingName+"_helipad_1")
         cmds.polyCylinder( subdivisionsX=8, subdivisionsY=2, subdivisionsZ=2, height=0.5,radius=2,name=heliPadName)
         heliPadPosition=[]
-        cmds.xform(heliPadName,translation=[self.buildingPosition[0],self.buildingHeight,(self.buildingPosition[2]-3)])
+        cmds.xform(heliPadName,translation=[self.buildingPosition[0],self.buildingHeight,(self.buildingPosition[2]-3)],rotation=[0,randInteger(1,359),0])
         cmds.parent(heliPadName,buildingName)#Parents the helipad to the building (Mostly for organization)
+        self.heliPadBuildings.append(buildingName)#Adds the building into a list used for handling textures
 
 
     elif effect=="applyMaterial":#Effect to add materials from a predetermined list to specific parts of building geometry. Has to be last so all geometry is there
         uvScale=cmds.floatSliderGrp(self.inpUVScale,query=True, value=True)#Gets the scale factor from the slider
         cmds.polyAutoProjection(buildingName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the building
-        self.heliPadBuildings.append(buildingName)#Adds the building into a list used for handling textures
         
 
         #Assigns main building textures
@@ -122,15 +122,16 @@ def addBuildingEffects(self,effect,buildingName):
 
         #Assigns helipad textures
         if buildingName in self.heliPadBuildings and len(self.materialsWindow.heliPadMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes
+            print(buildingName, "has helipad")
             randomMatHeliPad=random.choice(self.materialsWindow.heliPadMaterials)
             print("Assigning ",randomMatHeliPad,"as the helipad mat for",buildingName)
-            for heliPadName in cmds.ls(objectsOnly=True):#Loops through all objects in the scene
-                if buildingName in heliPadName and "HeliPad" in heliPadName:
-                    cmds.polyAutoProjection(heliPadName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=2, sc=1, o=1, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
-                    cmds.select(heliPadName)#Selects the balcony by its name
-                    cmds.sets(forceElement=randomMatHeliPad)#Apply the same texture to the balcony as the main building
-                    cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
-            
+            heliPadName=(buildingName+"_helipad_1")            
+            #cmds.polyAutoProjection(heliPadName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=2, sc=1, o=1, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
+            cmds.select(heliPadName)#Selects the balcony by its name
+            cmds.sets(forceElement=randomMatHeliPad)#Apply the same texture to the balcony as the main building
+            cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
+        else:
+            print("no helipad",buildingName)
         #Assigns roof textures
         if len(self.materialsWindow.roofMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
             randomMatRoof=random.choice(self.materialsWindow.roofMaterials)
