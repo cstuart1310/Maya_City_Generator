@@ -86,13 +86,13 @@ def addBuildingEffects(self,effect,buildingName):
         cmds.parent(billboardName,buildingName)#Parents to the building (Mostly for organization)
         self.billboardBuildings.append(buildingName)#Adds the building into a list used for handling textures
 
-    elif effect=="placeUneven" and "NOPlaceUneven" not in self.effects:#Checks that the effect hasnt been disabled
+    elif effect=="placeUneven":#Checks that the effect hasnt been disabled
         try:
             terrain=cmds.textField(self.inpPlaceUnevenTerrain,query=True,text=True)#Gets the terrain name from the user input box
             print("Terrain:",terrain)
             aimLocator = cmds.spaceLocator(n='aimloc',a=True)[0]#Locator used to get the position
             closest = cmds.createNode('closestPointOnMesh')#Creates the node used to get the position
-            terrain_sh = cmds.listRelatives(terrain, ni=True)[0]
+            terrain_sh = cmds.listRelatives(terrain, noIntermediate=True)[0]
             cmds.connectAttr(terrain_sh+'.worldMesh[0]', closest+'.inMesh')
             cmds.connectAttr(terrain_sh+'.worldMatrix[0]', closest+'.inputMatrix')
             cmds.connectAttr(buildingName+'.t', closest+'.inPosition')        
