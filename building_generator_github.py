@@ -1,9 +1,9 @@
 #Maya City Generator - Callum Stuart, Birmingham City University Visual Effects
 import maya.cmds as cmds
+import maya.mel as mel
 import random
 
 layoutMode=""
-effects=[]#Effects to apply to a building
 
 #functions----------------------------------------
 
@@ -85,6 +85,28 @@ def addBuildingEffects(self,effect,buildingName):
             cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(-45,0),0])
         cmds.parent(billboardName,buildingName)#Parents to the building (Mostly for organization)
         self.billboardBuildings.append(buildingName)#Adds the building into a list used for handling textures
+
+    elif effect=="placeUneven" and "NOPlaceUneven" not in self.effects:#Checks that the effect hasnt been disabled
+        try:
+            terrain=cmds.textField(self.inpPlaceUnevenTerrain,query=True,text=True)#Gets the terrain name from the user input box
+            print("Terrain:",terrain)
+            aimLocator = cmds.spaceLocator(n='aimloc',a=True)[0]#Locator used to get the position
+            closest = cmds.createNode('closestPointOnMesh')#Creates the node used to get the position
+            terrain_sh = cmds.listRelatives(terrain, ni=True)[0]
+            cmds.connectAttr(terrain_sh+'.worldMesh[0]', closest+'.inMesh')
+            cmds.connectAttr(terrain_sh+'.worldMatrix[0]', closest+'.inputMatrix')
+            cmds.connectAttr(buildingName+'.t', closest+'.inPosition')        
+            cmds.select(terrain, aimLocator)
+            pctr = mel.eval('pointOnPolyConstraint -offset 0 0 0  -weight 1;')[0]#Uses MEL instead of python because of a python bug when running this command
+            cmds.connectAttr('{}.parameterU'.format(closest), '{}.target[0].targetU'.format(pctr), f=True)
+            cmds.connectAttr('{}.parameterV'.format(closest), '{}.target[0].targetV'.format(pctr), f=True)
+            cmds.orientConstraint(aimLocator, buildingName, mo=False, weight=1)
+            cmds.xform(buildingName,translation=[cmds.getAttr('aimloc.translateX'),cmds.getAttr('aimloc.translateY'),cmds.getAttr('aimloc.translateZ')],rotation=[cmds.getAttr('aimloc.rotateX'),cmds.getAttr('aimloc.rotateY'),cmds.getAttr('aimloc.rotateZ')])#Translates the building to the new pos on the terrain
+            cmds.delete("aimloc")#Deletes the aim locator
+        except:
+            pass
+#            cmds.confirmDialog(title="Error!",message=("Terrain named "+terrain+" does not exist. Effect has been disabled"))
+
 
 
     elif effect=="applyMaterial":#Effect to add materials from a predetermined list to specific parts of building geometry. Has to be last so all geometry is there
@@ -185,7 +207,7 @@ class material_Window(object):#Class for the wiondows to do with the material se
         if cmds.textScrollList(self.billboardMaterialsTSList, query=True, allItems=True) != None:
             self.billboardMaterials=cmds.textScrollList(self.billboardMaterialsTSList, query=True, allItems=True)
 
-        
+        #Prints the materials to the script editor for testing
         print("Building Materials",self.buildingMaterials)
         print("Glass Materials",self.glassMaterials)
         print("Roof Materials",self.roofMaterials)
@@ -326,9 +348,12 @@ class BG_Window(object):
         self.inpEffectAddBillboard=cmds.checkBox(label='Add Billboards', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddBillboardChance),statusBarMessage="Creates and places a billboard on the roof of the building")
         self.inpEffectAddBillboardChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
-        self.inpEffectapplyMaterial=cmds.checkBox(label='Auto UV and apply material(s) to buildings',onCommand=lambda x: self.toggleSliderLock(self.inpUVScale),statusBarMessage="Performs an automatic UV on the building and all extra elements, then applies a random material from the lists in the material management window")#Doesn't have a chance input because it will always happen on all buildings if selected
+        self.inpEffectapplyMaterial=cmds.checkBox(label='Auto UV and apply material(s) to buildings',changeCommand=lambda x: self.toggleSliderLock(self.inpUVScale),statusBarMessage="Performs an automatic UV on the building and all extra elements, then applies a random material from the lists in the material management window")#Doesn't have a chance input because it will always happen on all buildings if selected
         self.inpUVScale=cmds.floatSliderGrp(field=True, label='UV Scale:', minValue=0.5,maxValue=10, value=5,enable=False)
-       
+
+        self.inpEffectPlaceUneven=cmds.checkBox(label='Place buildings across uneven terrain',changeCommand=lambda x: self.toggleSliderLock(self.inpPlaceUnevenTerrain),statusBarMessage="Performs an automatic UV on the building and all extra elements, then applies a random material from the lists in the material management window")#Doesn't have a chance input because it will always happen on all buildings if selected
+        self.inpPlaceUnevenTerrain=cmds.textField("Terrain Name",enable=False)
+
         cmds.columnLayout(adjustableColumn = True)
         cmds.separator(style='shelf',width=800,height=50)
 
@@ -353,27 +378,53 @@ class BG_Window(object):
 
 
     def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
-        try:
-            if  cmds.intSliderGrp(slider,query=True,enable=True):#If slider is enabled
-                print("Disabling slider",slider)
-                cmds.intSliderGrp(slider,edit=True,enable=False)#Disable it
-            elif cmds.intSliderGrp(slider,query=True,enable=False):#If slider is disabled
-                cmds.intSliderGrp(slider,edit=True,enable=True)#Enable it
-                print("Enabling slider",slider)
-            else:
-                cmds.intSliderGrp(slider,edit=True,enable=True)#Enable it
-                print("Enabling slider",slider)
-        except RuntimeError:#Errors because its actually looking for a floatSliderGrp
-            if  cmds.floatSliderGrp(slider,query=True,enable=True):#If slider is enabled
-                print("Disabling slider",slider)
-                cmds.floatSliderGrp(slider,edit=True,enable=False)#Disable it
-            elif cmds.floatSliderGrp(slider,query=True,enable=False):#If slider is disabled
-                cmds.floatSliderGrp(slider,edit=True,enable=True)#Enable it
-                print("Enabling slider",slider)
-            else:
-                cmds.floatSliderGrp(slider,edit=True,enable=True)#Enable it
-                print("Enabling slider",slider)
-        #If it actually isn't looking for a float slider group then no worries because it'll still crash
+        sliderType=1
+        toggled=False
+        while toggled==False:
+            try:
+                if sliderType==1:#First slider type is most likely
+                    if  cmds.intSliderGrp(slider,query=True,enable=True):#If slider is enabled
+                        print("Disabling slider",slider)
+                        cmds.intSliderGrp(slider,edit=True,enable=False)#Disable it
+                        toggled=True
+                    elif cmds.intSliderGrp(slider,query=True,enable=False):#If slider is disabled
+                        cmds.intSliderGrp(slider,edit=True,enable=True)#Enable it
+                        print("Enabling slider",slider)
+                        toggled=True
+                    else:
+                        cmds.intSliderGrp(slider,edit=True,enable=True)#Enable it
+                        print("Enabling slider",slider)
+                        toggled=True
+                elif sliderType==2:#Second slider type (Float sliders)
+                    if  cmds.floatSliderGrp(slider,query=True,enable=True):#If slider is enabled
+                        print("Disabling slider",slider)
+                        cmds.floatSliderGrp(slider,edit=True,enable=False)#Disable it
+                        toggled=True
+                    elif cmds.floatSliderGrp(slider,query=True,enable=False):#If slider is disabled
+                        cmds.floatSliderGrp(slider,edit=True,enable=True)#Enable it
+                        print("Enabling slider",slider)
+                        toggled=True
+                    else:
+                        cmds.floatSliderGrp(slider,edit=True,enable=True)#Enable it
+                        print("Enabling slider",slider)
+                        toggled=True
+                elif sliderType==3:#Third slider group (Text fields) (Not technically a slider but it's easier to call it one)
+                    if  cmds.textField(slider,query=True,enable=True):#If slider is enabled
+                        print("Disabling slider",slider)
+                        cmds.textField(slider,edit=True,enable=False)#Disable it
+                        toggled=True
+                    elif cmds.textField(slider,query=True,enable=False):#If slider is disabled
+                        cmds.textField(slider,edit=True,enable=True)#Enable it
+                        print("Enabling slider",slider)
+                        toggled=True
+                    else:
+                        cmds.textField(slider,edit=True,enable=True)#Enable it
+                        print("Enabling slider",slider)
+                        toggled=True
+
+            except RuntimeError:#Errors because its looking for a different thing
+                sliderType+=1
+        
 
 
     def removeBuildings(self, *args):#Removes the last generated city (Whichever name is stored in self.buildinggroup)
@@ -466,6 +517,7 @@ class BG_Window(object):
         valBuildingDepthMax = cmds.floatFieldGrp(self.inpBuildingDepth, query=True, value2=True)#Gets the value by querying the slider bar (Or input box)
         valNoBuildings = cmds.intSliderGrp(self.inpNoBuildings, query=True, value=True)
 
+
         #misc variables that need to be set once outside the loop so they can iterate during the loop
         prevPosition=valBuildingRangeMin#Used for placing the first building in uniform mode (So it's placed in the first corner)
         zVal=valBuildingRangeMin#Used to lay out the buildings in rows
@@ -479,26 +531,27 @@ class BG_Window(object):
         print("Glass Materials",self.materialsWindow.glassMaterials)
 
 
-        effects=[]#Clears effects on each re-run
+        self.effects=[]#Clears effects on each re-run
         
         #gets effects (In the order that works best to apply in)
         if cmds.checkBox(self.inpEffectScaleTop, query=True, value=True):#Queries if check box is checked
-            effects.append(["scaleTop",cmds.intSliderGrp(self.inpEffectScaleTopChance, query=True, value=True)])#Adds the effect to the list of effects to use
+            self.effects.append(["scaleTop",cmds.intSliderGrp(self.inpEffectScaleTopChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectAddWindows, query=True, value=True):#Queries if check box is checked
-            effects.append(["addWindows",cmds.intSliderGrp(self.inpEffectAddWindowsChance, query=True, value=True)])#Adds the effect and its % chance of being applied to an array
+            self.effects.append(["addWindows",cmds.intSliderGrp(self.inpEffectAddWindowsChance, query=True, value=True)])#Adds the effect and its % chance of being applied to an array
         if cmds.checkBox(self.inpEffectBevel, query=True, value=True):#Queries if check box is checked
-            effects.append(["bevel",cmds.intSliderGrp(self.inpEffectBevelChance, query=True, value=True)])#Adds the effect to the list of effects to use
+            self.effects.append(["bevel",cmds.intSliderGrp(self.inpEffectBevelChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectAddBalcony, query=True, value=True):#Queries if check box is checked 
-            effects.append(["addBalcony",cmds.intSliderGrp(self.inpEffectAddBalconyChance, query=True, value=True)])#Adds the effect to the list of effects to use
+            self.effects.append(["addBalcony",cmds.intSliderGrp(self.inpEffectAddBalconyChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectAddHeliPad, query=True, value=True):#Queries if check box is checked 
-            effects.append(["addHeliPad",cmds.intSliderGrp(self.inpEffectAddHeliPadChance, query=True, value=True)])#Adds the effect to the list of effects to use
+            self.effects.append(["addHeliPad",cmds.intSliderGrp(self.inpEffectAddHeliPadChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectAddBillboard, query=True, value=True):#Queries if check box is checked 
-            effects.append(["addBillboard",cmds.intSliderGrp(self.inpEffectAddBillboardChance, query=True, value=True)])#Adds the effect to the list of effects to use
+            self.effects.append(["addBillboard",cmds.intSliderGrp(self.inpEffectAddBillboardChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectRotate, query=True, value=True):#Queries if check box is checked
-            effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
+            self.effects.append(["rotate",cmds.intSliderGrp(self.inpEffectRotateChance, query=True, value=True)])#Adds the effect to the list of effects to use
         if cmds.checkBox(self.inpEffectapplyMaterial, query=True, value=True):#Queries if check box is checked. addMaterial must be last so all geometry exists to texture
-            effects.append(["applyMaterial",100])#Adds the effect to the list of effects to use (And a 100% likelihood so all buildings are material-ed)
-
+            self.effects.append(["applyMaterial",100])#Adds the effect to the list of effects to use (And a 100% likelihood so all buildings are material-ed)
+        if cmds.checkBox(self.inpEffectPlaceUneven, query=True, value=True):#Queries if check box is checked. Sets the likelihood to 100% for this effect else the buildings are at different heights
+            self.effects.append(['placeUneven',100])
 
         #main loop
         self.updateGroupName()
@@ -551,12 +604,13 @@ class BG_Window(object):
 
         #Applies effects to current building
 
-            for effectData in effects: #Loops through each piece of data in the 2d array (Array contains the effect name and then its % chance fof being applied)
+            for effectData in self.effects: #Loops through each piece of data in the 2d array (Array contains the effect name and then its % chance fof being applied)
                 effect=effectData[0]
                 effectChance=effectData[1]
 
                 if self.useEffect(effectChance)==True:#If it's selected to use the effect
                     addBuildingEffects(self,effect,buildingName)#Apply the effect
+
             cmds.parent(buildingName,self.buildingGroup)
             createdBuildings+=1 #increments the counter for the status bar by 1
             print("\n")
