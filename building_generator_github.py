@@ -80,9 +80,9 @@ def addBuildingEffects(self,effect,buildingName):
         cmds.polyCube( subdivisionsX=5, subdivisionsY=4, subdivisionsZ=4,name=billboardName,width=5,height=3,depth=0.5)
         cmds.polyExtrudeFacet(billboardName+".f[64]",billboardName+".f[60]",billboardName+".f[75]",billboardName+".f[79]",kft=False, ltz=10, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces upwards to make a balcony
         if buildingName in self.windowBuildings:#checks if the building has windows as the billboard needs a slightly different rotation to prevent clipping
-            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(-30,-45),0])
+            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(-45,-30),0])
         else:#Regular range of rotation
-            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(0,-45),0])
+            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(-45,0),0])
         cmds.parent(billboardName,buildingName)#Parents to the building (Mostly for organization)
         self.billboardBuildings.append(buildingName)#Adds the building into a list used for handling textures
 
@@ -296,7 +296,7 @@ class BG_Window(object):
 
 
         #Var inputs
-        self.inpBuildingRange = cmds.floatFieldGrp( numberOfFields=2, label='Building distance range:', value1=-1000, value2=1000)
+        self.inpBuildingRange = cmds.floatFieldGrp( numberOfFields=2, label='City range/row width:', value1=-1000, value2=1000)
         self.inpBuildingHeight = cmds.floatFieldGrp( numberOfFields=2, label='Building Height range:', value1=10, value2=100)
         self.inpBuildingWidth = cmds.floatFieldGrp( numberOfFields=2, label='Building Width range:', value1=10, value2=20)
         self.inpBuildingDepth = cmds.floatFieldGrp( numberOfFields=2, label='Building Depth range:', value1=10, value2=20)
@@ -395,8 +395,6 @@ class BG_Window(object):
 
         randomLayoutMode=random.choice(['Uniform with spacing variation',"Uniform (Grid)","Random"])#picks a random value from the layout mode list
         cmds.optionMenu(self.inpLayoutMode,edit=True,value=randomLayoutMode)#Updates the optionMenu with a random choice from the list
-
-
 
         #Randomizes the height width and depth
         buildingRangeMin=randInteger(10,100)#Sets the lower bound as a var so upper cant be smaller than lower
