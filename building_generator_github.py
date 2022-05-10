@@ -504,13 +504,26 @@ class BG_Window(object):
         cmds.floatFieldGrp(self.inpBuildingDepth, edit=True, value1=10,value2=20)#Updates the value to a random one
 
         cmds.intSliderGrp(self.inpEffectAddWindowsChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        cmds.checkBox(self.inpEffectAddWindows,edit=True,value=False)#Turns off the check box
+        
         cmds.intSliderGrp(self.inpEffectBevelChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        cmds.checkBox(self.inpEffectBevel,edit=True,value=False)#Turns off the check box
+        
         cmds.intSliderGrp(self.inpEffectScaleTopChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        cmds.checkBox(self.inpEffectScaleTop,edit=True,value=False)#Turns off the check box
+        
         cmds.intSliderGrp(self.inpEffectRotateChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        cmds.checkBox(self.inpEffectRotate,edit=True,value=False)#Turns off the check box
+        
         cmds.intSliderGrp(self.inpEffectAddBalconyChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        cmds.checkBox(self.inpEffectAddBalcony,edit=True,value=False)#Turns off the check box
+        
         cmds.intSliderGrp(self.inpEffectAddHeliPadChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        cmds.checkBox(self.inpEffectAddHeliPad,edit=True,value=False)#Turns off the check box
+        
         cmds.intSliderGrp(self.inpEffectAddBillboardChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
-
+        cmds.checkBox(self.inpEffectAddBillboard,edit=True,value=False)#Turns off the check box
+        
 
         cmds.optionMenu(self.inpLayoutMode,edit=True,value="Uniform with spacing variation")#Resets the layout mode to the default
         
