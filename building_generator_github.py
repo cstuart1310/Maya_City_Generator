@@ -121,7 +121,7 @@ def addBuildingEffects(self,effect,buildingName):
 
             #Assigns balcony textures (Only after assigning main building texture to ensure all conditions to texture are met)
             print("Balcony Buildings",self.balconyBuildings)
-            if buildingName in self.balconyBuildings:#Checks to make sure there's something in the list else the random lib crashes
+            if buildingName in self.balconyBuildings and len(self.materialsWindow.buildingMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
                 for balconyName in cmds.ls(objectsOnly=True):#Loops through all objects in the scene
                     if buildingName in balconyName and "Balcony" in balconyName:
                         print("Balcony Name",balconyName)
@@ -129,6 +129,10 @@ def addBuildingEffects(self,effect,buildingName):
                         cmds.select(balconyName)#Selects the balcony by its name
                         cmds.sets(forceElement=randomMatBuilding)#Apply the same texture to the balcony as the main building
                         cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
+            elif buildingName in self.balconyBuildings and len(self.materialsWindow.billboardMaterials)==0:#If there are no materials
+                cmds.polyAutoProjection(balconyName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
+
+
 
         #Assigns window textures
         if buildingName in self.windowBuildings and len(self.materialsWindow.glassMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes
@@ -156,10 +160,12 @@ def addBuildingEffects(self,effect,buildingName):
             randomMatbillboard=random.choice(self.materialsWindow.billboardMaterials)
             print("Assigning ",randomMatbillboard,"as the billboard mat for",buildingName)
             billboardName=(buildingName+"_billboard_1")            
-            cmds.polyAutoProjection(billboardName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=2, sc=1, o=1, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
-            cmds.select(billboardName)#Selects the balcony by its name
+            cmds.select(billboardName)#Selects the billboard by its name
             cmds.sets(forceElement=randomMatbillboard)#Apply the same texture to the balcony as the main building
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
+        elif buildingName in self.billboardBuildings and len(self.materialsWindow.billboardMaterials)==0:#If there are no materials
+            cmds.polyAutoProjection(billboardName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=2, sc=1, o=1, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the billboard
+
 
         #Assigns roof textures
         if len(self.materialsWindow.roofMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
