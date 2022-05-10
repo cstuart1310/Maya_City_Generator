@@ -327,13 +327,13 @@ class BG_Window(object):
         self.inpBuildingHeight = cmds.floatFieldGrp(columnAlign=[1,"left"], numberOfFields=2, label='Building Height range:', value1=10, value2=100)
         self.inpBuildingWidth = cmds.floatFieldGrp(columnAlign=[1,"left"], numberOfFields=2, label='Building Width range:', value1=10, value2=20)
         self.inpBuildingDepth = cmds.floatFieldGrp(columnAlign=[1,"left"], numberOfFields=2, label='Building Depth range:', value1=10, value2=20)
-        self.inpNoBuildings = cmds.intSliderGrp(columnAlign=[1,"left"], field=True, label='Number of buildings:', minValue=1,maxValue=5000, value=1000)
+        self.inpNoBuildings = cmds.intSliderGrp(columnAlign=[1,"left"], width=1000, field=True, label='Number of buildings:', minValue=1,maxValue=5000, value=1000)
         cmds.separator(height=20,style="shelf")
 
         #Effect Tickboxes and sliders
-        cmds.rowColumnLayout(nc=2,columnWidth=[(1, 300), (2, 1250)])#Changes the layout so can have 2 items next to each other
+        cmds.rowColumnLayout(nc=2,columnWidth=[(1, 300), (2, 1000)])#Changes the layout so can have 2 items next to each other
         self.inpEffectAddWindows=cmds.checkBox(label='Add Windows',changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddWindowsChance),statusBarMessage="Adds windows to the buildings by extruding faces inwards")#Checkbox for toggling the effect. Lambda is used to define the changecommand without actually running it, so a variable can be passed and the one function can manage all slider toggles
-        self.inpEffectAddWindowsChance = cmds.intSliderGrp(width=1200,columnAlign=[1,"left"],field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        self.inpEffectAddWindowsChance = cmds.intSliderGrp(width=10,columnAlign=[1,"left"],field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
         
         self.inpEffectBevel=cmds.checkBox(label='Bevel Top edges',changeCommand=lambda x: self.toggleSliderLock(self.inpEffectBevelChance),statusBarMessage="Bevels one of the top edges of the building")
         self.inpEffectBevelChance = cmds.intSliderGrp(columnAlign=[1,"left"],field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
@@ -470,8 +470,8 @@ class BG_Window(object):
 
         #Randomizes the effects and their likeliness
         checkBoxBool=random.choice([True, False])#Picks a true or false value for the effect (Is a var so it can sync with the slider lock)
-        cmds.checkBox(self.inpEffectAddWindows, edit=True, value=checkBoxBool)#Edits the checkbox to the random bool
-        cmds.intSliderGrp(self.inpEffectAddWindowsChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
+        cmds.checkBox(self.inpEffectAddWindows, edit=True, value=checkBoxBool)#Edits the checkbox to the random bool (So it stays in sync with the effect)
+        cmds.intSliderGrp(self.inpEffectAddWindowsChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))#Randomizes the likelihood value
         
         checkBoxBool=random.choice([True, False])
         cmds.checkBox(self.inpEffectBevel, edit=True, value=checkBoxBool)
@@ -492,6 +492,8 @@ class BG_Window(object):
         checkBoxBool=random.choice([True, False])
         cmds.checkBox(self.inpEffectAddHeliPad, edit=True, value=checkBoxBool)
         cmds.intSliderGrp(self.inpEffectAddHeliPadChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
+
+
 
     def resetValues(self,*args):#Resets all values to their defaults
         cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value1=10,value2=100)#Updates the value to a random one
