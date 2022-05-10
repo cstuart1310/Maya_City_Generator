@@ -493,6 +493,9 @@ class BG_Window(object):
         cmds.checkBox(self.inpEffectAddHeliPad, edit=True, value=checkBoxBool)
         cmds.intSliderGrp(self.inpEffectAddHeliPadChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
 
+        checkBoxBool=random.choice([True, False])
+        cmds.checkBox(self.inpEffectAddBillboard, edit=True, value=checkBoxBool)
+        cmds.intSliderGrp(self.inpEffectAddBillboardChance,edit=True,enable=checkBoxBool,value=randInteger(1,100))
 
 
     def resetValues(self,*args):#Resets all values to their defaults
@@ -506,6 +509,8 @@ class BG_Window(object):
         cmds.intSliderGrp(self.inpEffectRotateChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
         cmds.intSliderGrp(self.inpEffectAddBalconyChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
         cmds.intSliderGrp(self.inpEffectAddHeliPadChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        cmds.intSliderGrp(self.inpEffectAddBillboardChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+
 
         cmds.optionMenu(self.inpLayoutMode,edit=True,value="Uniform with spacing variation")#Resets the layout mode to the default
         
