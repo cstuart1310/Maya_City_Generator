@@ -87,25 +87,28 @@ def addBuildingEffects(self,effect,buildingName):
         self.billboardBuildings.append(buildingName)#Adds the building into a list used for handling textures
 
     elif effect=="placeUneven":#Checks that the effect hasnt been disabled
-        try:
-            terrain=cmds.textField(self.inpPlaceUnevenTerrain,query=True,text=True)#Gets the terrain name from the user input box
-            print("Terrain:",terrain)
-            aimLocator = cmds.spaceLocator(n='aimloc',a=True)[0]#Locator used to get the position
-            closest = cmds.createNode('closestPointOnMesh')#Creates the node used to get the position
-            terrain_sh = cmds.listRelatives(terrain, noIntermediate=True)[0]
-            cmds.connectAttr(terrain_sh+'.worldMesh[0]', closest+'.inMesh')
-            cmds.connectAttr(terrain_sh+'.worldMatrix[0]', closest+'.inputMatrix')
-            cmds.connectAttr(buildingName+'.t', closest+'.inPosition')        
-            cmds.select(terrain, aimLocator)
-            pctr = mel.eval('pointOnPolyConstraint -offset 0 0 0  -weight 1;')[0]#Uses MEL instead of python because of a python bug when running this command
-            cmds.connectAttr('{}.parameterU'.format(closest), '{}.target[0].targetU'.format(pctr), f=True)
-            cmds.connectAttr('{}.parameterV'.format(closest), '{}.target[0].targetV'.format(pctr), f=True)
-            cmds.orientConstraint(aimLocator, buildingName, mo=False, weight=1)
-            cmds.xform(buildingName,translation=[cmds.getAttr('aimloc.translateX'),(cmds.getAttr('aimloc.translateY')+self.buildingHeight/3),cmds.getAttr('aimloc.translateZ')],rotation=[cmds.getAttr('aimloc.rotateX'),cmds.getAttr('aimloc.rotateY'),cmds.getAttr('aimloc.rotateZ')])#Translates the building to the new pos on the terrain
-            cmds.delete("aimloc")#Deletes the aim locator
-        except:
-            pass
-#            cmds.confirmDialog(title="Error!",message=("Terrain named "+terrain+" does not exist. Effect has been disabled"))
+        if self.unevenTerrainExists==True:#Variable used to skip this effect if the terrain doesn't exist
+            try:
+                terrain=cmds.textField(self.inpPlaceUnevenTerrain,query=True,text=True)#Gets the terrain name from the user input box
+                print("Terrain:",terrain)
+                aimLocator = cmds.spaceLocator(n='aimloc',a=True)[0]#Locator used to get the position
+                closest = cmds.createNode('closestPointOnMesh')#Creates the node used to get the position
+                terrain_sh = cmds.listRelatives(terrain, noIntermediate=True)[0]
+                cmds.connectAttr(terrain_sh+'.worldMesh[0]', closest+'.inMesh')
+                cmds.connectAttr(terrain_sh+'.worldMatrix[0]', closest+'.inputMatrix')
+                cmds.connectAttr(buildingName+'.t', closest+'.inPosition')        
+                cmds.select(terrain, aimLocator)
+                pctr = mel.eval('pointOnPolyConstraint -offset 0 0 0  -weight 1;')[0]#Uses MEL instead of python because of a python bug when running this command
+                cmds.connectAttr('{}.parameterU'.format(closest), '{}.target[0].targetU'.format(pctr), f=True)
+                cmds.connectAttr('{}.parameterV'.format(closest), '{}.target[0].targetV'.format(pctr), f=True)
+                cmds.orientConstraint(aimLocator, buildingName, mo=False, weight=1)
+                cmds.xform(buildingName,translation=[cmds.getAttr('aimloc.translateX'),(cmds.getAttr('aimloc.translateY')+self.buildingHeight/3),cmds.getAttr('aimloc.translateZ')],rotation=[cmds.getAttr('aimloc.rotateX'),cmds.getAttr('aimloc.rotateY'),cmds.getAttr('aimloc.rotateZ')])#Translates the building to the new pos on the terrain
+                cmds.delete("aimloc")#Deletes the aim locator
+                self.unevenTerrainExists=True
+            except (ValueError, TypeError):
+                self.unevenTerrainExists=False#Toggles the boolean so this doesn't pop up for each building
+                cmds.confirmDialog(title="Error!",message=("Terrain named "+terrain+" does not exist. Effect has been disabled."))#Error popup
+                cmds.delete("aimloc")#Deletes the aim locator
 
 
 
@@ -551,8 +554,9 @@ class BG_Window(object):
         self.windowBuildings=[]#An array of buildings with window geometry so the material can be different to non-window buildings
         self.bevelBuildings=[]#An array of buildings with bevels applied so different faces can be selected for the roof mats
         self.balconyBuildings=[]#An array of buildings with balconies applied (Need to be UV'd and textured seperately)
-        self.heliPadBuildings=[]
-        self.billboardBuildings=[]
+        self.heliPadBuildings=[]#An array of buildings with helipads applied (Need to be UV'd and textured seperately)
+        self.billboardBuildings=[]#An array of buildings with billboards applied (Need to be UV'd and textured seperately)
+        self.unevenTerrainExists=True#Boolean used to skip the unevenTerrain effect if the terrain doesn't exist
         print("Building Materials",self.materialsWindow.buildingMaterials)
         print("Glass Materials",self.materialsWindow.glassMaterials)
 
