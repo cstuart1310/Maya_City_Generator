@@ -90,7 +90,6 @@ def addBuildingEffects(self,effect,buildingName):
         if self.unevenTerrainExists==True:#Variable used to skip this effect if the terrain doesn't exist
             try:
                 terrain=cmds.textField(self.inpPlaceUnevenTerrain,query=True,text=True)#Gets the terrain name from the user input box
-                print("Terrain:",terrain)
                 aimLocator = cmds.spaceLocator(n='aimloc',a=True)[0]#Locator used to get the position
                 closest = cmds.createNode('closestPointOnMesh')#Creates the node used to get the position
                 terrain_sh = cmds.listRelatives(terrain, noIntermediate=True)[0]
@@ -119,15 +118,13 @@ def addBuildingEffects(self,effect,buildingName):
         #Assigns main building textures
         if len(self.materialsWindow.buildingMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
             randomMatBuilding=random.choice(self.materialsWindow.buildingMaterials)
-            print("Assigning ",randomMatBuilding,"as the glass mat for",buildingName)
+            print("Assigning ",randomMatBuilding,"as the building mat for",buildingName)
             cmds.sets(forceElement=randomMatBuilding)#Assigns a random material from the array to the selected object (A building)
 
             #Assigns balcony textures (Only after assigning main building texture to ensure all conditions to texture are met)
-            print("Balcony Buildings",self.balconyBuildings)
             if buildingName in self.balconyBuildings and len(self.materialsWindow.buildingMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
                 for balconyName in cmds.ls(objectsOnly=True):#Loops through all objects in the scene
                     if buildingName in balconyName and "Balcony" in balconyName:
-                        print("Balcony Name",balconyName)
                         cmds.polyAutoProjection(balconyName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
                         cmds.select(balconyName)#Selects the balcony by its name
                         cmds.sets(forceElement=randomMatBuilding)#Apply the same texture to the balcony as the main building
@@ -635,8 +632,7 @@ class BG_Window(object):
                     zVal=zVal+self.buildingDepth*randFloat(2,3.5) #Starts placing buildings on the next row            
             try:
                 cmds.xform(buildingName,translation=self.buildingPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the building to the generated position
-            except ValueError as e:
-                print(e)
+            except ValueError:
                 cmds.confirmDialog(title="Error!",message=("A building named "+buildingName+" already exists, generation stopped. Choose a new group name and retry."))
                 break
 
