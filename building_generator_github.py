@@ -385,6 +385,10 @@ class BG_Window(object):
         for illegal in illegalChars:#Loops through every illegal character in the above array
             self.buildingGroup=self.buildingGroup.replace(illegal,"_")#Replaces any instances of the current illegal character with an underscore
 
+        if self.buildingGroup=="" or self.buildingGroup[0].isalpha()==False:#If the string is empty or the first character is a number
+            cmds.confirmDialog(title="Error!",message=("This group name is invalid. It has been reset to default."))#Shows an error message
+            self.buildingGroup="Buildings"#Resets the group name to default
+            cmds.textField(self.inpBuildingGroup,edit=True,text="Buildings")#Resets the text box to default
 
     def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
         sliderType=1
@@ -605,6 +609,10 @@ class BG_Window(object):
             self.buildingWidth=randFloat(valBuildingWidthMin,valBuildingWidthMax)
             self.buildingDepth=randFloat(valBuildingDepthMin,valBuildingDepthMax)
 
+            if cmds.objExists(buildingName):
+                cmds.confirmDialog(title="Error!",message=("A building named "+buildingName+" already exists, generation stopped. Choose a new group name and retry."))
+                break
+            
             cmds.polyCube(width=self.buildingWidth,height=self.buildingHeight,depth=self.buildingDepth,name=buildingName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a building
 
 
