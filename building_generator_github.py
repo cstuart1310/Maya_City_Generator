@@ -101,7 +101,7 @@ def addBuildingEffects(self,effect,buildingName):
             cmds.connectAttr('{}.parameterU'.format(closest), '{}.target[0].targetU'.format(pctr), f=True)
             cmds.connectAttr('{}.parameterV'.format(closest), '{}.target[0].targetV'.format(pctr), f=True)
             cmds.orientConstraint(aimLocator, buildingName, mo=False, weight=1)
-            cmds.xform(buildingName,translation=[cmds.getAttr('aimloc.translateX'),cmds.getAttr('aimloc.translateY'),cmds.getAttr('aimloc.translateZ')],rotation=[cmds.getAttr('aimloc.rotateX'),cmds.getAttr('aimloc.rotateY'),cmds.getAttr('aimloc.rotateZ')])#Translates the building to the new pos on the terrain
+            cmds.xform(buildingName,translation=[cmds.getAttr('aimloc.translateX'),(cmds.getAttr('aimloc.translateY')+self.buildingHeight/3),cmds.getAttr('aimloc.translateZ')],rotation=[cmds.getAttr('aimloc.rotateX'),cmds.getAttr('aimloc.rotateY'),cmds.getAttr('aimloc.rotateZ')])#Translates the building to the new pos on the terrain
             cmds.delete("aimloc")#Deletes the aim locator
         except:
             pass
@@ -136,9 +136,9 @@ def addBuildingEffects(self,effect,buildingName):
             print("Assigning ",randomMatGlass,"as the glass mat for",buildingName)
 
             if buildingName in self.bevelBuildings and buildingName in self.windowBuildings:
-                cmds.select(buildingName+'.f[45:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]')#Selects different faces if the building is also beveled
+                cmds.select(buildingName+'.f[45:74]',buildingName+'.f[0:24]',buildingName+'.f[95:144]')#Selects different faces if the building is also beveled
             else:
-                cmds.select(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]')#Select the faces of the windows
+                cmds.select(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[95:149]')#Select the faces of the windows
             cmds.sets(forceElement=randomMatGlass)#Apply a random glass material
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
