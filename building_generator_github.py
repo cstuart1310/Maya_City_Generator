@@ -15,25 +15,20 @@ def randInteger(min,max):
 
 #Applies effects from the list to the currently selected building
 
-def addBuildingEffects(self,effect,buildingName):
+def addBuildingEffects(self,effect,buildingName):#Function used to apply the effects to the buildings
     print("Applying",effect,"to",buildingName)
     if effect=="addWindows":#Adds windows
-        cmds.polyExtrudeFacet(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]',kft=False, ltz=-.75, ls=(.5, .8, 0),smoothingAngle=45)
+        cmds.polyExtrudeFacet(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[100:128]',buildingName+'.f[129:149]',kft=False, ltz=-.75, ls=(.5, .8, 0),smoothingAngle=45)#Extrudes the necessary faces inwards by 0.75
         self.windowBuildings.append(buildingName)#USed for the texture effect so it knows which buildings to add different glass mats to
 
     elif effect=="scaleTop":#Scale top in
-        cmds.select(buildingName+'.e[30:34]')
+        cmds.select(buildingName+'.e[30:34]')#Selects the needed faces
         cmds.select(buildingName+'.e[25:29]',add=True)
-        cmds.scale(randFloat(0.7,1.3),randFloat(0.7,1.3),1)
-    
-    elif effect=="addTower":#Scale top in
-        cmds.select(buildingName+'.e[30:34]')
-        cmds.select(buildingName+'.e[25:29]',add=True)
-        cmds.scale(randFloat(0.5,1.5),randFloat(0.5,1.5),1)
+        cmds.scale(randFloat(0.7,1.3),randFloat(0.7,1.3),1)#Randomly scales them inwards or outwards
 
     elif effect=="bevel":#Bevels edges
         edgeRingVal=randInteger(0,130)#Picks the edge (ring) to bevel        
-        cmds.polyBevel(buildingName+".e[25:29]", offset=randFloat(0.1,0.9),offsetAsFraction=True )
+        cmds.polyBevel(buildingName+".e[25:29]", offset=randFloat(0.1,0.9),offsetAsFraction=True )#Bevels the edge
         self.bevelBuildings.append(buildingName)#USed for the texture effect so it knows which buildings to add different glass mats to
 
     elif effect=="rotate":#Rotates the building along the Y axis only
@@ -42,19 +37,19 @@ def addBuildingEffects(self,effect,buildingName):
         cmds.xform(buildingName,rotation=rotateVal,worldSpace=True,centerPivots=True,absolute=True)#Rotates the building
 
     elif effect=="addBalcony":#Adds a balcony(s) to the side of the building
-        midEdges=[5,10,15,20]
-        balconyYpositions=[]
+        midEdges=[5,10,15,20]#The edges used to get the height to place the balcony
+        balconyYpositions=[]#Used to store the possible Y axis to place the balcony onto
 
         for edge in midEdges:#Loops through each of the edges that dont touch the ground or the top of the building            
             balconyYpositions.append(cmds.xform(buildingName+".e["+str(edge)+"]",query=True,worldSpace=True,translation=True)[1])#Adds the Y coordinate of the edge to be used as a possible Y coord for the balcony
 
         noBalconies=randInteger(1,16)#Randomly picks a number of balconies to add
         for balconyCount in range(0,noBalconies):
-            balconyName=(buildingName+"_Balcony_"+str(balconyCount))
+            balconyName=(buildingName+"_Balcony_"+str(balconyCount))#Names the balconies in the format building_1_balcony_1
             cmds.polyCube(width=self.buildingWidth/3,height=self.buildingHeight/100,depth=self.buildingDepth/3,name=balconyName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a balcony
             
-            cmds.polyExtrudeFacet(balconyName+".f[25]",balconyName+".f[35]",balconyName+".f[45]",balconyName+".f[47]",balconyName+".f[49]",balconyName+".f[39]",balconyName+".f[29]",balconyName+".f[27]",kft=False, ltz=1.5, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces upwards to make a balcony
-            balconyAxis=random.choice(["X+","Z+","X-","Z-"])#Chooses whether to place the balcony on the X or Z axis
+            cmds.polyExtrudeFacet(balconyName+".f[25]",balconyName+".f[35]",balconyName+".f[45]",balconyName+".f[47]",balconyName+".f[49]",balconyName+".f[39]",balconyName+".f[29]",balconyName+".f[27]",kft=False, ltz=1.5, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces upwards to make the railings
+            balconyAxis=random.choice(["X+","Z+","X-","Z-"])#Chooses whether to place the balcony on the X or Z axis (And if it's + or - so they can be placed on all 4 sides of a building)
             if balconyAxis=="X+":
                 balconyPosition=[self.buildingPosition[0]+(self.buildingWidth/2),random.choice(balconyYpositions),self.buildingPosition[2]]
             elif balconyAxis=="Z+":
@@ -69,26 +64,26 @@ def addBuildingEffects(self,effect,buildingName):
         self.balconyBuildings.append(buildingName)#Adds the building into a list used for handling textures
 
     elif effect=="addHeliPad":
-        heliPadName=(buildingName+"_helipad_1")
-        cmds.polyCylinder( subdivisionsX=8, subdivisionsY=2, subdivisionsZ=2, height=0.5,radius=2,name=heliPadName)
-        cmds.xform(heliPadName,translation=[(self.buildingPosition[0]+3),self.buildingHeight,(self.buildingPosition[2]-3)],rotation=[0,randInteger(1,359),0])
+        heliPadName=(buildingName+"_helipad_1")#Names the helipads in the convention building_1_helipad_1 (Even though there's only one helipad per building this helps if the user manually duplicates it)
+        cmds.polyCylinder( subdivisionsX=8, subdivisionsY=2, subdivisionsZ=2, height=0.5,radius=2,name=heliPadName)#Creates the geometry for the helipad (And octogon)
+        cmds.xform(heliPadName,translation=[(self.buildingPosition[0]+3),self.buildingHeight,(self.buildingPosition[2]-3)],rotation=[0,randInteger(1,359),0])#Places the helipad on the roof
         cmds.parent(heliPadName,buildingName)#Parents the helipad to the building (Mostly for organization)
         self.heliPadBuildings.append(buildingName)#Adds the building into a list used for handling textures
     
     elif effect=="addBillboard":
-        billboardName=(buildingName+"_billboard_1")
-        cmds.polyCube( subdivisionsX=5, subdivisionsY=4, subdivisionsZ=4,name=billboardName,width=5,height=3,depth=0.5)
-        cmds.polyExtrudeFacet(billboardName+".f[64]",billboardName+".f[60]",billboardName+".f[75]",billboardName+".f[79]",kft=False, ltz=10, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces upwards to make a balcony
+        billboardName=(buildingName+"_billboard_1")#Names the billboards in the convention building_1_billboard_1 (Even though there's only one billboard per building this helps if the user manually duplicates it)
+        cmds.polyCube( subdivisionsX=5, subdivisionsY=4, subdivisionsZ=4,name=billboardName,width=5,height=3,depth=0.5)#Creates the geometry (A cube)
+        cmds.polyExtrudeFacet(billboardName+".f[64]",billboardName+".f[60]",billboardName+".f[75]",billboardName+".f[79]",kft=False, ltz=10, ls=(1, 1, 0),smoothingAngle=45)#Extrudes the faces down for the billboard's legs
         if buildingName in self.windowBuildings:#checks if the building has windows as the billboard needs a slightly different rotation to prevent clipping
-            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(-45,-30),0])
+            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(-45,-30),0])#Moves the billboard
         else:#Regular range of rotation
-            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(-45,0),0])
+            cmds.xform(billboardName,translation=[(self.buildingPosition[0]-self.buildingWidth*0.25),(self.buildingHeight+randInteger(3,10)),(self.buildingPosition[2]-self.buildingDepth*0.2)],rotation=[0,randInteger(-45,0),0])#Moves the billboard
         cmds.parent(billboardName,buildingName)#Parents to the building (Mostly for organization)
         self.billboardBuildings.append(buildingName)#Adds the building into a list used for handling textures
 
-    elif effect=="placeUneven":#Checks that the effect hasnt been disabled
-        if self.unevenTerrainExists==True:#Variable used to skip this effect if the terrain doesn't exist
-            try:
+    elif effect=="placeUneven":
+        if self.unevenTerrainExists==True:#Variable used to skip this effect if the terrain doesn't exist (Else it slows down the generation by attempting it each time)
+            try:#Catches errors if the terrain doesnt exist etc
                 terrain=cmds.textField(self.inpPlaceUnevenTerrain,query=True,text=True)#Gets the terrain name from the user input box
                 aimLocator = cmds.spaceLocator(n='aimloc',a=True)[0]#Locator used to get the position
                 closest = cmds.createNode('closestPointOnMesh')#Creates the node used to get the position
@@ -98,15 +93,15 @@ def addBuildingEffects(self,effect,buildingName):
                 cmds.connectAttr(buildingName+'.t', closest+'.inPosition')        
                 cmds.select(terrain, aimLocator)
                 pctr = mel.eval('pointOnPolyConstraint -offset 0 0 0  -weight 1;')[0]#Uses MEL instead of python because of a python bug when running this command
-                cmds.connectAttr('{}.parameterU'.format(closest), '{}.target[0].targetU'.format(pctr), f=True)
-                cmds.connectAttr('{}.parameterV'.format(closest), '{}.target[0].targetV'.format(pctr), f=True)
-                cmds.orientConstraint(aimLocator, buildingName, mo=False, weight=1)
+                cmds.connectAttr('{}.parameterU'.format(closest), '{}.target[0].targetU'.format(pctr), f=True)#Gets the U value of the closest point
+                cmds.connectAttr('{}.parameterV'.format(closest), '{}.target[0].targetV'.format(pctr), f=True)#Gets the V value of the closest point
+                cmds.orientConstraint(aimLocator, buildingName, mo=False, weight=1)#Orients the building to the locator
                 cmds.xform(buildingName,translation=[cmds.getAttr('aimloc.translateX'),(cmds.getAttr('aimloc.translateY')+self.buildingHeight/3),cmds.getAttr('aimloc.translateZ')],rotation=[cmds.getAttr('aimloc.rotateX'),cmds.getAttr('aimloc.rotateY'),cmds.getAttr('aimloc.rotateZ')])#Translates the building to the new pos on the terrain
                 cmds.delete("aimloc")#Deletes the aim locator
-                self.unevenTerrainExists=True
-            except (ValueError, TypeError):
+                self.unevenTerrainExists=True#Used the first time the effect is run to show that it works
+            except (ValueError, TypeError,RuntimeError):#Catches errors for the terrain not existing or not being geometry
                 self.unevenTerrainExists=False#Toggles the boolean so this doesn't pop up for each building
-                cmds.confirmDialog(title="Error!",message=("Terrain named "+terrain+" does not exist. Effect has been disabled."))#Error popup
+                cmds.confirmDialog(title="Error!",message=("Terrain named "+terrain+" does not exist or is not valid geometry. Effect has been disabled."))#Error popup
                 cmds.delete("aimloc")#Deletes the aim locator
 
 
@@ -117,14 +112,14 @@ def addBuildingEffects(self,effect,buildingName):
         
         #Assigns main building textures
         if len(self.materialsWindow.buildingMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
-            randomMatBuilding=random.choice(self.materialsWindow.buildingMaterials)
+            randomMatBuilding=random.choice(self.materialsWindow.buildingMaterials)#Randomly picks a material from the list
             print("Assigning ",randomMatBuilding,"as the building mat for",buildingName)
             cmds.sets(forceElement=randomMatBuilding)#Assigns a random material from the array to the selected object (A building)
 
             #Assigns balcony textures (Only after assigning main building texture to ensure all conditions to texture are met)
             if buildingName in self.balconyBuildings and len(self.materialsWindow.buildingMaterials)>0:#Checks to make sure there's something in the list else the random lib crashes
                 for balconyName in cmds.ls(objectsOnly=True):#Loops through all objects in the scene
-                    if buildingName in balconyName and "Balcony" in balconyName:
+                    if buildingName in balconyName and "Balcony" in balconyName:#If the geo is a balcony associated with the current building
                         cmds.polyAutoProjection(balconyName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
                         cmds.select(balconyName)#Selects the balcony by its name
                         cmds.sets(forceElement=randomMatBuilding)#Apply the same texture to the balcony as the main building
@@ -136,19 +131,19 @@ def addBuildingEffects(self,effect,buildingName):
 
         #Assigns window textures
         if buildingName in self.windowBuildings and len(self.materialsWindow.glassMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes
-            randomMatGlass=random.choice(self.materialsWindow.glassMaterials)
+            randomMatGlass=random.choice(self.materialsWindow.glassMaterials)#Picks a random material from the list
             print("Assigning ",randomMatGlass,"as the glass mat for",buildingName)
 
-            if buildingName in self.bevelBuildings and buildingName in self.windowBuildings:
+            if buildingName in self.bevelBuildings and buildingName in self.windowBuildings:#Checks if the building is beveled as this means different faces need to be selected
                 cmds.select(buildingName+'.f[45:74]',buildingName+'.f[0:24]',buildingName+'.f[95:144]')#Selects different faces if the building is also beveled
-            else:
+            else:#If the building only has windows and is not beveled
                 cmds.select(buildingName+'.f[50:74]',buildingName+'.f[0:24]',buildingName+'.f[95:149]')#Select the faces of the windows
             cmds.sets(forceElement=randomMatGlass)#Apply a random glass material
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
 
         #Assigns helipad textures
         if buildingName in self.heliPadBuildings and len(self.materialsWindow.heliPadMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes            
-            randomMatHeliPad=random.choice(self.materialsWindow.heliPadMaterials)
+            randomMatHeliPad=random.choice(self.materialsWindow.heliPadMaterials)#Picks a random material from the list
             print("Assigning ",randomMatHeliPad,"as the helipad mat for",buildingName)
             heliPadName=(buildingName+"_helipad_1")            
             cmds.select(heliPadName)#Selects the balcony by its name
@@ -157,7 +152,7 @@ def addBuildingEffects(self,effect,buildingName):
 
        #Assigns billboard textures
         if buildingName in self.billboardBuildings and len(self.materialsWindow.billboardMaterials)>0:#If the selected buildings has had the addWindows effect applied. Checks to make sure there's something in the list else the random lib crashes            
-            randomMatbillboard=random.choice(self.materialsWindow.billboardMaterials)
+            randomMatbillboard=random.choice(self.materialsWindow.billboardMaterials)#Picks a random material from the list
             print("Assigning ",randomMatbillboard,"as the billboard mat for",buildingName)
             billboardName=(buildingName+"_billboard_1")            
             cmds.select(billboardName)#Selects the billboard by its name
@@ -189,17 +184,16 @@ def addBuildingEffects(self,effect,buildingName):
 
 
 #main-------------------------------------------------
-class material_Window(object):#Class for the wiondows to do with the material selections
+class material_Window(object):#Class for the windows to do with the material selections
 
     def addMaterial(self,window,matList,TSList,*args):#Function used to add new materials to the given list (And updates all global material lists)
-        print(self,window,matList,TSList)
         newMatList=matList+(cmds.textScrollList(self.sceneMaterialsTS, query=True, si=True))#Concats the original list and the user's selections into one list
         newMatList=list(dict.fromkeys(newMatList))#Converts the material list into a dictionary and back to remove duplicates
         cmds.textScrollList(TSList,edit=True,removeAll=True,append=newMatList)#Clears the existing list then appends the new array
 
         #Updates the lists so the main class can access them
         if cmds.textScrollList(self.buildingMaterialsTSList, query=True, allItems=True) != None:#Checks if the list returns NONE becaise it's empty (This breaks everything and has annoyed me for about a day)
-            self.buildingMaterials=cmds.textScrollList(self.buildingMaterialsTSList, query=True, allItems=True)
+            self.buildingMaterials=cmds.textScrollList(self.buildingMaterialsTSList, query=True, allItems=True)#Updates the array with the items in the UI list
         
         if cmds.textScrollList(self.glassMaterialsTSList, query=True, allItems=True) != None:
             self.glassMaterials=cmds.textScrollList(self.glassMaterialsTSList, query=True, allItems=True)
@@ -222,10 +216,10 @@ class material_Window(object):#Class for the wiondows to do with the material se
 
 
 
-    def clearMaterialList(self,window,TSList,matList,*args):
+    def clearMaterialList(self,window,TSList,matList,*args):#Clears all materials from the UI list
         print("Clearing ",TSList)
-        cmds.textScrollList(TSList,edit=True,removeAll=True)
-        matList=matList.clear()
+        cmds.textScrollList(TSList,edit=True,removeAll=True)#Removes all items from the textScrollList
+        matList=matList.clear()#Clears the array of materials
 
     def __init__(self,*args):
         #Creates the objects lists (Done in the init so they don't reset when the UI is re-opened, innit?)
@@ -247,7 +241,7 @@ class material_Window(object):#Class for the wiondows to do with the material se
 
         cmds.columnLayout(rowSpacing=10, columnWidth=200)
         cmds.text("Scene Materials",font="boldLabelFont")
-        cmds.text("Select the desired shader groups from the list below (CTRL/Shift select for multiple) \n Click the button to add them to the wanted group \n All changes are saved automatically, so this window can be closed at any time",align="left")
+        cmds.text("Select the desired shader groups from the list below (CTRL/Shift select for multiple) \n Click the button to add them to the wanted group \n All changes are saved automatically, so this window can be closed at any time",align="left")#Instructions
         sceneMaterialsList = cmds.ls(set=True)#Gets all materials (sets) in the scene
         self.sceneMaterialsTS=cmds.textScrollList(append=sceneMaterialsList,allowMultiSelection=True) #Shows all materials in the scene as a textScrollList
         
@@ -281,7 +275,7 @@ class material_Window(object):#Class for the wiondows to do with the material se
 
         
         cmds.separator()
-        cmds.rowColumnLayout(numberOfRows=1)#Changes to a 2 column layout for side-by-side buttons
+        
  
         cmds.showWindow()
 
@@ -293,7 +287,7 @@ class material_Window(object):#Class for the wiondows to do with the material se
 #Menu Setup
 class BG_Window(object):
     def __init__(self):
-        self.materialsWindow=material_Window(self)#Initiates the material window (Doesnt load UI yet, done later on)
+        self.materialsWindow=material_Window(self)#Initiates the material window to setup the material arrays (Doesnt load UI yet, done later on)
 
         #Window
         self.window = "BG_Window"
@@ -388,8 +382,8 @@ class BG_Window(object):
             cmds.textField(self.inpBuildingGroup,edit=True,text="Buildings")#Resets the text box to default
 
     def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
-        sliderType=1
-        toggled=False
+        sliderType=1#Used to iterate through intSliders, floatSliders, and textFields
+        toggled=False#USed to prevent looping again after working successfully once
         while toggled==False:
             try:
                 if sliderType==1:#First slider type is most likely
@@ -433,26 +427,26 @@ class BG_Window(object):
                         toggled=True
 
             except RuntimeError:#Errors because its looking for a different thing
-                sliderType+=1
+                sliderType+=1#Swaps to the next type
         
 
 
     def removeBuildings(self, *args):#Removes the last generated city (Whichever name is stored in self.buildinggroup)
-        self.updateGroupName()
-        if cmds.objExists(self.buildingGroup):
+        self.updateGroupName()#Gets the latest group name from the input box
+        if cmds.objExists(self.buildingGroup):#If the group exists
             cmds.delete(self.buildingGroup) #Deletes the buildings group
-        else:
-            cmds.confirmDialog(title="Error!",message=("A group named "+self.buildingGroup+" does not exist. No objects have been deleted."))
+        else:#If the group does not exist
+            cmds.confirmDialog(title="Error!",message=("A group named "+self.buildingGroup+" does not exist. No objects have been deleted."))#Show an error message
 
 
-    def useEffect(self,effectChance):#Returns true or false on whether or not to apply an effect based on its' inputted likelyhood
+    def useEffect(self,effectChance):#Returns true or false on whether or not to apply an effect based on its' inputted likelihood
         useVal=randInteger(1,100)#Produces a random value between 1 and 100
         if useVal<=effectChance:#If the random val is within the range of 0-effectChance
-            return True
+            return True#Use the effect
         else:
-            return False
+            return False#Don't use the effect
 
-    def randomiseValues(self,*args):
+    def randomiseValues(self,*args):#Randomizes the values and toggle switches for a lot of the user inputs (Not all though as some the user will not want randomized)
 
         randomLayoutMode=random.choice(['Uniform with spacing variation',"Uniform (Grid)","Random"])#picks a random value from the layout mode list
         cmds.optionMenu(self.inpLayoutMode,edit=True,value=randomLayoutMode)#Updates the optionMenu with a random choice from the list
@@ -585,20 +579,20 @@ class BG_Window(object):
             self.effects.append(['placeUneven',100])
 
         #main loop
-        self.updateGroupName()
-        if cmds.objExists(self.buildingGroup):
-            cmds.confirmDialog(title="Warning!",message=("A group named "+self.buildingGroup+" already exists, generated buildings will be placed into it"))
-        else:
+        self.updateGroupName()#Gets the latest group name from the input box
+        if cmds.objExists(self.buildingGroup):#If a group of the current name already exists
+            cmds.confirmDialog(title="Warning!",message=("A group named "+self.buildingGroup+" already exists, generated buildings will be placed into it"))#Warns the user but continues
+        else:#If a group with the inputted name does not currently exist
             cmds.group(empty=True, name=self.buildingGroup)#Creates the group that the buildings will be placed into
         
-        print("Layout Mode:",layoutMode)
+        print("Layout Mode:",layoutMode)#Prints the layout mode into the script editor for debugging purposes
         cmds.progressWindow(endProgress=1)#Removes any existing progress windows from past runs
-        self.progressWindow=cmds.progressWindow(title="City Generation Progress",status="City Generation Progress",isInterruptable=1,maxValue=valNoBuildings)#,steps=100/valNoBuildings)#Starts the (invisible) progressWindow, used to catch the ESC key to exit
+        self.progressWindow=cmds.progressWindow(title="Generating...",status="City Generation Progress",isInterruptable=1,maxValue=valNoBuildings)#Creates the progressWindow, used to catch the ESC key to exit
         for buildingNo in range(1,valNoBuildings+1):#Plus 1 so first building is building 1 but still exact range
 
-            cmds.progressWindow(self.progressWindow,edit=True, step=1, status=("Finished "+str(buildingNo)+"/"+str(valNoBuildings)+" buildings"))#Starts the (invisible) progressWindow, used to catch the ESC key to exit
-            if cmds.progressWindow(self.progressWindow,query=1, isCancelled=1):
-                break
+            cmds.progressWindow(self.progressWindow,edit=True, step=1, status=("Finished "+str(buildingNo)+"/"+str(valNoBuildings)+" buildings"))#Update the progress status of the window
+            if cmds.progressWindow(self.progressWindow,query=1, isCancelled=1):#If the user presses ESC during the generation
+                break#Breaks the generation loop
             buildingName=(self.buildingGroup+"_Building_"+str(buildingNo))#Names the buildings in the format Building_1
 
             #generates dimensions for the building
@@ -606,52 +600,51 @@ class BG_Window(object):
             self.buildingWidth=randFloat(valBuildingWidthMin,valBuildingWidthMax)
             self.buildingDepth=randFloat(valBuildingDepthMin,valBuildingDepthMax)
 
-            if cmds.objExists(buildingName):
-                cmds.confirmDialog(title="Error!",message=("A building named "+buildingName+" already exists, generation stopped. Choose a new group name and retry."))
-                break
+            if cmds.objExists(buildingName):#If a building with the desired name already exists
+                cmds.confirmDialog(title="Error!",message=("A building named "+buildingName+" already exists, generation stopped. Choose a new group name and retry."))#Shows the user an error
+                break#Quits the generation
             
             cmds.polyCube(width=self.buildingWidth,height=self.buildingHeight,depth=self.buildingDepth,name=buildingName,subdivisionsX=5,subdivisionsY=5, subdivisionsZ=5)#Creates the cube to be morphed into a building
-
 
             #Generates the position for the building to be placed (Spawns at 0,0 by default)
             if layoutMode=="Random":#Randomly places buildings (May cause collisions)
                 self.buildingPosition=[randFloat(valBuildingRangeMin,valBuildingRangeMax),self.buildingHeight/2,randFloat(valBuildingRangeMin,valBuildingRangeMax)] #Divs height by 2 because buildings are placed at 0 so half clips below
             
             elif layoutMode=="Uniform (Grid)":#Places buildings in a grid format with set spacing
-                self.buildingPosition=[prevPosition,self.buildingHeight/2,zVal]
-                prevPosition=prevPosition+(self.buildingWidth*2)
+                self.buildingPosition=[prevPosition,self.buildingHeight/2,zVal]#Places the buildings in-line on the Z axis until reaching the row width
+                prevPosition=prevPosition+(self.buildingWidth*2)#Places each building 2* their width apart
                 if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
                     prevPosition=valBuildingRangeMin#Resets the building to the left side
                     zVal=zVal+self.buildingDepth*3 #Starts placing buildings on the next row
             
             elif layoutMode=="Uniform with spacing variation":#Places buildings in a grid format with random (within range) spacing
-                self.buildingPosition=[prevPosition,self.buildingHeight/2,zVal]
-                prevPosition=prevPosition+(self.buildingWidth*randFloat(1.3,3.5))
+                self.buildingPosition=[prevPosition,self.buildingHeight/2,zVal]#Places the buildings in-line on the Z axis until reaching the row width
+                prevPosition=prevPosition+(self.buildingWidth*randFloat(1.3,3.5))#Randomizes the X axis placement slightly
                 if prevPosition*2>valBuildingRangeMax:#If the building goes out of range
                     prevPosition=valBuildingRangeMin#Resets the building to the left side
                     zVal=zVal+self.buildingDepth*randFloat(2,3.5) #Starts placing buildings on the next row            
             try:
                 cmds.xform(buildingName,translation=self.buildingPosition,worldSpace=True,centerPivots=True,absolute=True)#Moves the building to the generated position
-            except ValueError:
+            except ValueError:#Catches errors caused by xform-ing the building
                 cmds.confirmDialog(title="Error!",message=("A building named "+buildingName+" already exists, generation stopped. Choose a new group name and retry."))
                 break
 
         #Applies effects to current building
 
             for effectData in self.effects: #Loops through each piece of data in the 2d array (Array contains the effect name and then its % chance fof being applied)
-                effect=effectData[0]
+                effect=effectData[0]#effect data is in the format [EffectName,Likelihood], so this just seperates them
                 effectChance=effectData[1]
 
-                if self.useEffect(effectChance)==True:#If it's selected to use the effect
+                if self.useEffect(effectChance)==True:#If the likelihood vs the random chosen number means that the effect is to be used
                     addBuildingEffects(self,effect,buildingName)#Apply the effect
 
-            cmds.parent(buildingName,self.buildingGroup)
+            cmds.parent(buildingName,self.buildingGroup)#Places the building into the group
             createdBuildings+=1 #increments the counter for the status bar by 1
-            print("\n")
+            print("\n")#Prints a new line for easier debugging
             
-        cmds.progressWindow(self.progressWindow,endProgress=1)
+        cmds.progressWindow(self.progressWindow,endProgress=1)#Closes the progress window once all buildings have been generated
 
-print("\n"*30)
+print("\n"*30)#Prints some empty lines so debugging is less confusing
 print("Starting...")
 #Main startup
 myWindow = BG_Window()
