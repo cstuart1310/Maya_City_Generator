@@ -309,9 +309,8 @@ class BG_Window(object):
         # title text
         cmds.text(self.title)
         # separator
-        cmds.separator(height=20)
-        
-        cmds.text( label='Group Name' )
+        cmds.separator(height=20,style="shelf")
+        cmds.text( label='Group Name',align="left" )
         self.inpBuildingGroup = cmds.textField(text="Buildings",statusBarMessage="The name of the group to be created that the buildings will be placed into")#Text input for the group name that the buildings are placed into
         self.updateGroupName()#Updates the group name and removes any illegal characters
         #create layout
@@ -320,7 +319,7 @@ class BG_Window(object):
         cmds.menuItem(label='Uniform with spacing variation') #Layout mode option for grid layout with some random leeway (Best looking one)
         cmds.menuItem(label='Uniform (Grid)')#Layout mode option for grid layout
         cmds.menuItem(label='Random')#Layout mode option for entirely random positions
-        cmds.separator(height=20)
+        cmds.separator(height=20,style="shelf")
 
 
         #Var inputs
@@ -329,47 +328,48 @@ class BG_Window(object):
         self.inpBuildingWidth = cmds.floatFieldGrp( numberOfFields=2, label='Building Width range:', value1=10, value2=20)
         self.inpBuildingDepth = cmds.floatFieldGrp( numberOfFields=2, label='Building Depth range:', value1=10, value2=20)
         self.inpNoBuildings = cmds.intSliderGrp(field=True, label='Number of buildings:', minValue=1,maxValue=5000, value=1000)
-        cmds.separator(height=20)
+        cmds.separator(height=20,style="shelf")
 
         #Effect Tickboxes and sliders
-        cmds.rowColumnLayout(nc=2)#Changes the layout so can have 2 items next to each other
+        cmds.rowColumnLayout(nc=2,columnWidth=[(1, 300), (2, 1250)])#Changes the layout so can have 2 items next to each other
         self.inpEffectAddWindows=cmds.checkBox(label='Add Windows',changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddWindowsChance),statusBarMessage="Adds windows to the buildings by extruding faces inwards")#Checkbox for toggling the effect. Lambda is used to define the changecommand without actually running it, so a variable can be passed and the one function can manage all slider toggles
-        self.inpEffectAddWindowsChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
-
+        self.inpEffectAddWindowsChance = cmds.intSliderGrp(width=1200,columnAlign=[1,"left"],field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
+        
         self.inpEffectBevel=cmds.checkBox(label='Bevel Top edges',changeCommand=lambda x: self.toggleSliderLock(self.inpEffectBevelChance),statusBarMessage="Bevels one of the top edges of the building")
-        self.inpEffectBevelChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
+        self.inpEffectBevelChance = cmds.intSliderGrp(columnAlign=[1,"left"],field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
         self.inpEffectScaleTop=cmds.checkBox(label='Scale Top Edges', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectScaleTopChance),statusBarMessage="Scales the top of the building inwards or outwards so it isn't a perfect oblong")
-        self.inpEffectScaleTopChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
+        self.inpEffectScaleTopChance = cmds.intSliderGrp(columnAlign=[1,"left"],field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
         self.inpEffectRotate=cmds.checkBox(label='Rotate building', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectRotateChance),statusBarMessage="Rotates the building around the Y axis")
-        self.inpEffectRotateChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
+        self.inpEffectRotateChance = cmds.intSliderGrp(columnAlign=[1,"left"],field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
         self.inpEffectAddBalcony=cmds.checkBox(label='Add balconies', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddBalconyChance),statusBarMessage="Creates and places a seperate piece of geometry on the building which looks like a balcony \n (Only placed along the edge loops)")
-        self.inpEffectAddBalconyChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
+        self.inpEffectAddBalconyChance = cmds.intSliderGrp(columnAlign=[1,"left"],field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
         self.inpEffectAddHeliPad=cmds.checkBox(label='Add Helicopter Landing Pads', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddHeliPadChance),statusBarMessage="Creates and places a heli-pad on the roof of the building")
-        self.inpEffectAddHeliPadChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
+        self.inpEffectAddHeliPadChance = cmds.intSliderGrp(columnAlign=[1,"left"],field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
         self.inpEffectAddBillboard=cmds.checkBox(label='Add Billboards', changeCommand=lambda x: self.toggleSliderLock(self.inpEffectAddBillboardChance),statusBarMessage="Creates and places a billboard on the roof of the building")
-        self.inpEffectAddBillboardChance = cmds.intSliderGrp(field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
+        self.inpEffectAddBillboardChance = cmds.intSliderGrp(columnAlign=[1,"left"],field=True, label='% likelihood:', minValue=1,maxValue=100, value=50,enable=False)
 
         self.inpEffectapplyMaterial=cmds.checkBox(label='Auto UV and apply material(s) to buildings',changeCommand=lambda x: self.toggleSliderLock(self.inpUVScale),statusBarMessage="Performs an automatic UV on the building and all extra elements, then applies a random material from the lists in the material management window")#Doesn't have a chance input because it will always happen on all buildings if selected
-        self.inpUVScale=cmds.floatSliderGrp(field=True, label='UV Scale:', minValue=0.5,maxValue=10, value=5,enable=False)
+        self.inpUVScale=cmds.floatSliderGrp(columnAlign=[1,"left"],field=True, label='UV Scale:', minValue=0.5,maxValue=10, value=5,enable=False)
 
-        self.inpEffectPlaceUneven=cmds.checkBox(label='Place buildings across uneven terrain',changeCommand=lambda x: self.toggleSliderLock(self.inpPlaceUnevenTerrain),statusBarMessage="Performs an automatic UV on the building and all extra elements, then applies a random material from the lists in the material management window")#Doesn't have a chance input because it will always happen on all buildings if selected
-        self.inpPlaceUnevenTerrain=cmds.textField("Terrain Name",enable=False)
+        self.inpEffectPlaceUneven=cmds.checkBox(label='Place buildings across uneven terrain',changeCommand=lambda x: self.toggleSliderLock(self.inpPlaceUnevenTerrain),statusBarMessage="Places buildings along the uneven surface defined in the input box")#Doesn't have a chance input because it will always happen on all buildings if selected
+        self.inpPlaceUnevenTerrain=cmds.textField(text="Terrain Name",enable=False)
+        
+        cmds.columnLayout(adjustableColumn = False,columnWidth=1500)
 
-        cmds.columnLayout(adjustableColumn = True)
-        cmds.separator(style='shelf',width=800,height=50)
+        cmds.separator(style='none',height=50)
 
-        self.buildBtn = cmds.button( label='Create Buildings', command=self.genBuildings,width=500,statusBarMessage="Generates a city using the specified options")#generation button
-        self.undoBtn = cmds.button( label='Undo Last City', command=self.removeBuildings,width=500,statusBarMessage="Undo's the last city with the name currently in the group name box.")#undo button
-        cmds.separator(style='shelf',width=800)
-        self.randomiseBtn = cmds.button( label='Randomize all values', command=self.randomiseValues,width=500,statusBarMessage="Randomizes the effects and their associated values")
-        self.resetBtn = cmds.button( label='Reset all values to defaults', command=self.resetValues,width=500,statusBarMessage="Resets the values to the defaults")
-        cmds.separator(style='shelf',width=800)
-        self.materialsBtn=cmds.button(label="Open Material Management Window",command=self.materialsWindow.createMaterialUI,statusBarMessage="Opens the window used to specify materials to different elements of the buildings")
+        self.buildBtn = cmds.button( label='Create Buildings', command=self.genBuildings,width=300,statusBarMessage="Generates a city using the specified options")#generation button
+        self.undoBtn = cmds.button( label='Undo Last City', command=self.removeBuildings,width=300,statusBarMessage="Undo's the last city with the name currently in the group name box.")#undo button
+        cmds.separator(style='none',height=20)
+        self.randomiseBtn = cmds.button( label='Randomize all values', command=self.randomiseValues,width=300,statusBarMessage="Randomizes the effects and their associated values")
+        self.resetBtn = cmds.button( label='Reset all values to defaults', command=self.resetValues,width=300,statusBarMessage="Resets the values to the defaults")
+        cmds.separator(style='none',height=20)
+        self.materialsBtn=cmds.button(label="Open Material Management Window",command=self.materialsWindow.createMaterialUI,width=300,statusBarMessage="Opens the window used to specify materials to different elements of the buildings")
 
 
 
