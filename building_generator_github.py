@@ -125,7 +125,9 @@ def addBuildingEffects(self,effect,buildingName):#Function used to apply the eff
                         cmds.sets(forceElement=randomMatBuilding)#Apply the same texture to the balcony as the main building
                         cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
             elif buildingName in self.balconyBuildings and len(self.materialsWindow.billboardMaterials)==0:#If there are no materials
-                cmds.polyAutoProjection(balconyName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
+                for balconyName in cmds.ls(objectsOnly=True):#Loops through all objects in the scene
+                    if buildingName in balconyName and "Balcony" in balconyName:#If the geo is a balcony associated with the current building
+                        cmds.polyAutoProjection(balconyName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=0, sc=2, o=0, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the balcony
 
 
 
@@ -159,6 +161,7 @@ def addBuildingEffects(self,effect,buildingName):#Function used to apply the eff
             cmds.sets(forceElement=randomMatbillboard)#Apply the same texture to the balcony as the main building
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
         elif buildingName in self.billboardBuildings and len(self.materialsWindow.billboardMaterials)==0:#If there are no materials
+            billboardName=(buildingName+"_billboard_1")            
             cmds.polyAutoProjection(billboardName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=2, sc=1, o=1, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the billboard
 
 
