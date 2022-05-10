@@ -381,7 +381,7 @@ class BG_Window(object):
             self.buildingGroup="Buildings"#Resets the group name to default
             cmds.textField(self.inpBuildingGroup,edit=True,text="Buildings")#Resets the text box to default
 
-    def toggleSliderLock(self,slider,*args):#Toggles a slider bar (Needs to be a function as it's called before the UI elements being toggled are made)
+    def toggleSliderLock(self,slider,*args):#Toggles a slider bar's enabled state (Needs to be a function as it's called before the UI elements being toggled are made)
         sliderType=1#Used to iterate through intSliders, floatSliders, and textFields
         toggled=False#USed to prevent looping again after working successfully once
         while toggled==False:
@@ -497,9 +497,12 @@ class BG_Window(object):
 
 
     def resetValues(self,*args):#Resets all values to their defaults
-        cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value1=10,value2=100)#Updates the value to a random one
-        cmds.floatFieldGrp(self.inpBuildingWidth, edit=True, value1=10,value2=20)#Updates the value to a random one        
-        cmds.floatFieldGrp(self.inpBuildingDepth, edit=True, value1=10,value2=20)#Updates the value to a random one
+        cmds.floatFieldGrp(self.inpBuildingHeight, edit=True, value1=10,value2=100)#Resets the value to default
+        cmds.floatFieldGrp(self.inpBuildingWidth, edit=True, value1=10,value2=20)
+        cmds.floatFieldGrp(self.inpBuildingDepth, edit=True, value1=10,value2=20)
+        cmds.floatFieldGrp(self.inpBuildingRange, edit=True, value1=-1000,value2=1000)
+        cmds.intSliderGrp(self.inpNoBuildings,edit=True,value=1000)
+
 
         cmds.intSliderGrp(self.inpEffectAddWindowsChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
         cmds.checkBox(self.inpEffectAddWindows,edit=True,value=False)#Turns off the check box
