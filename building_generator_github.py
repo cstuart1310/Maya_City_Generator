@@ -323,11 +323,11 @@ class BG_Window(object):
 
 
         #Var inputs
-        self.inpBuildingRange = cmds.floatFieldGrp( numberOfFields=2, label='City range/row width:', value1=-1000, value2=1000)
-        self.inpBuildingHeight = cmds.floatFieldGrp( numberOfFields=2, label='Building Height range:', value1=10, value2=100)
-        self.inpBuildingWidth = cmds.floatFieldGrp( numberOfFields=2, label='Building Width range:', value1=10, value2=20)
-        self.inpBuildingDepth = cmds.floatFieldGrp( numberOfFields=2, label='Building Depth range:', value1=10, value2=20)
-        self.inpNoBuildings = cmds.intSliderGrp(field=True, label='Number of buildings:', minValue=1,maxValue=5000, value=1000)
+        self.inpBuildingRange = cmds.floatFieldGrp(columnAlign=[1,"left"], numberOfFields=2, label='City range/row width:', value1=-1000, value2=1000)
+        self.inpBuildingHeight = cmds.floatFieldGrp(columnAlign=[1,"left"], numberOfFields=2, label='Building Height range:', value1=10, value2=100)
+        self.inpBuildingWidth = cmds.floatFieldGrp(columnAlign=[1,"left"], numberOfFields=2, label='Building Width range:', value1=10, value2=20)
+        self.inpBuildingDepth = cmds.floatFieldGrp(columnAlign=[1,"left"], numberOfFields=2, label='Building Depth range:', value1=10, value2=20)
+        self.inpNoBuildings = cmds.intSliderGrp(columnAlign=[1,"left"], field=True, label='Number of buildings:', minValue=1,maxValue=5000, value=1000)
         cmds.separator(height=20,style="shelf")
 
         #Effect Tickboxes and sliders
