@@ -291,7 +291,7 @@ class BG_Window(object):
 
         #Window
         self.window = "BG_Window"
-        self.title = ("City Generator")
+        self.title = ("City Generator - Callum Stuart")
         self.size = (1500, 800)
 
         if cmds.window(self.window, exists = True):#Checks if existing window is open
