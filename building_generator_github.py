@@ -528,6 +528,11 @@ class BG_Window(object):
         cmds.intSliderGrp(self.inpEffectAddBillboardChance,edit=True, minValue=1,maxValue=100, value=50,enable=False)#Sliders default to off because the tickboxes also do
         cmds.checkBox(self.inpEffectAddBillboard,edit=True,value=False)#Turns off the check box
         
+        cmds.floatSliderGrp(self.inpUVScale,edit=True, minValue=0.5,maxValue=10, value=5,enable=False)
+        cmds.checkBox(self.inpEffectapplyMaterial,edit=True,value=False)#Turns off the check box
+
+        cmds.textField(self.inpPlaceUnevenTerrain,edit=True, text="Terrain Name",enable=False)#Sliders default to off because the tickboxes also do
+        cmds.checkBox(self.inpEffectPlaceUneven,edit=True,value=False)#Turns off the check box               
 
         cmds.optionMenu(self.inpLayoutMode,edit=True,value="Uniform with spacing variation")#Resets the layout mode to the default
         
