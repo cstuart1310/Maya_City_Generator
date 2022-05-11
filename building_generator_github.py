@@ -157,6 +157,7 @@ def addBuildingEffects(self,effect,buildingName):#Function used to apply the eff
             randomMatbillboard=random.choice(self.materialsWindow.billboardMaterials)#Picks a random material from the list
             print("Assigning ",randomMatbillboard,"as the billboard mat for",buildingName)
             billboardName=(buildingName+"_billboard_1")            
+            cmds.polyAutoProjection(billboardName+".f[*]", layoutMethod=0, insertBeforeDeformers=1, createNewMap=0, layout=2, sc=1, o=1, p=6, ps=0.2, ws=0,scale=(uvScale,uvScale,uvScale) )#Performs an automatic UV on the billboard
             cmds.select(billboardName)#Selects the billboard by its name
             cmds.sets(forceElement=randomMatbillboard)#Apply the same texture to the balcony as the main building
             cmds.select(buildingName)#Select the entire building object (Else this carries over to the next building)
